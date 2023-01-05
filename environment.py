@@ -40,7 +40,6 @@ class SatelliteEnv(Env):
         legal_move = self.is_legal_move()
         if not legal_move:
             self.state = state_before_action
-            self.set_group_modem_array()
         reward = self.reward_function()
         return self.state, reward, False, {}
 
