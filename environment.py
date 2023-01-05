@@ -1,5 +1,4 @@
 """Satellite environment."""
-from typing import List
 from gym import Env
 from gym import spaces
 import numpy as np
@@ -17,7 +16,7 @@ GRP_BANDWIDTH = 30
 class SatelliteEnv(Env):
     """Custom environment to model the optimization problem."""
 
-    def __init__(self, data: List):
+    def __init__(self, data: list):
         """Create an environment where to put satellite links."""
         super().__init__
         self.links = data
@@ -69,17 +68,37 @@ class SatelliteEnv(Env):
     def is_legal_move(self):
         if np.sum(self.grp_mod_array) != self.nb_links:
             return False
-        indices_ones = np.where(self.grp_mod_array > 0)[0]
-        modems_ok = self.check_modems(indices_ones)
-        groups_ok = self.check_groups(indices_ones)
+        modems_ok = self.check_modems()
+        groups_ok = self.check_groups()
         return modems_ok and groups_ok
 
-    def check_modems(self, used_modems):
-        for (i, j, _) in used_modems:
-            pass
+    def check_modems(self):
+        duplicate = []
+        for s in self.state:
+            if s not in duplicate:
+                indices = set(np.where(self.state == s)[0])
+                links_indices = [self.links[indice] for indice in indices]
+                binary_flow = np.sum([link["binary_flow"] for link in links_indices])
+                symbole_flow = np.sum([link["symbol_flow"] for link in links_indices])
+            if binary_flow > MOD_BIN_FLOW or symbole_flow > MOD_SYMB_FLOW or len(indices) > MOD_NB_LINKS:
+                return False
+            duplicate.append(s)
+        return True
 
-    def check_groups(self, used_groups):
-        pass
+    def check_groups(self):
+        """ Check if the groups are legal"""
+        duplicate = []
+        for s in self.state:
+            if s not in duplicate:
+                indices = set(np.where(self.state[:,0] == s[0])[0])
+                links_indices = [self.links[indice] for indice in indices]
+                bandwidth = np.sum([link["bandwidth"] for link in links_indices])
+                inverse_binary_flow = np.sum([link["inverse_binary_flow"] for link in links_indices])
+                min_group_inverse_binary_flow = np.min([link["group_inverse_binary_flow"] for link in links_indices])
+            if bandwidth > GRP_BANDWIDTH or len(indices) > GRP_NB_LINKS or inverse_binary_flow < min_group_inverse_binary_flow:
+                return False
+            duplicate.append(s)
+        return True
 
     def reset(self):
         """Reset the environment to an initial state."""
