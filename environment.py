@@ -23,24 +23,12 @@ class SatelliteEnv(Env):
         self.nb_links = len(self.links)
         self.grp_mod_array = np.zeros((self.nb_links, self.nb_links, self.nb_links))
         self.state = np.array([(i, i) for i in range(self.nb_links)])
-        self.set_group_modem_array()
         # Action space
-        self.action_space = spaces.Box(low=0, high=self.nb_links, shape=(3), dtype=int)
+        self.action_shape = (3,)
+        self.action_space = spaces.Box(low=np.zeros(self.action_shape), high=np.full(self.action_shape,self.nb_links), shape=self.action_shape, dtype=int)
         # Observation space
-        self.observation_space = spaces.Box(
-            low=0, high=self.nb_links, shape=(self.nb_links, 2), dtype=int
-        )
-
-    def set_group_modem_array(self):
-        """Update the group modem array.
-
-        It is an array with a 1 at the indice (i,j,k) if the
-        the link k is affected to the modem j of the group i and
-        0 otherwise.
-        """
-        self.grp_mod_array = np.zeros((self.nb_links, self.nb_links, self.nb_links))
-        for i in range(self.nb_links):
-            self.grp_mod_array[self.state[i, 0]][self.state[i, 1]][i] = 1
+        self.observation_shape = (self.nb_links, 2)
+        self.observation_space = spaces.Box(low=np.zeros(self.observation_shape), high=np.full(self.observation_shape, self.nb_links), shape=self.observation_shape, dtype=int)
 
     def reward_function(self):
         # Number of modems
@@ -63,7 +51,6 @@ class SatelliteEnv(Env):
     def take_action(self, action):
         """Move one link from a case to another one."""
         self.state[action[0], :] = [action[1], action[2]]
-        self.set_group_modem_array()
 
     def is_legal_move(self):
         if np.sum(self.grp_mod_array) != self.nb_links:
