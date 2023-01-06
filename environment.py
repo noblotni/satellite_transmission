@@ -23,7 +23,7 @@ class SatelliteEnv(Env):
         self.grp_mod_array = np.zeros((self.nb_links, self.nb_links, self.nb_links))
         self.state = np.array([(i, i) for i in range(self.nb_links)])
         self.action_shape = (3,)
-        self.action_space = spaces.Box(low=np.zeros(self.action_shape), high=np.full(self.action_shape,self.nb_links), shape=self.action_shape, dtype=int)
+        self.action_space = spaces.Box(low=np.zeros(self.action_shape), high=np.full(self.action_shape,self.nb_links-1), shape=self.action_shape, dtype=int)
         self.observation_shape = (self.nb_links, 2)
         self.observation_space = spaces.Box(low=np.zeros(self.observation_shape), high=np.full(self.observation_shape, self.nb_links), shape=self.observation_shape, dtype=int)
 
@@ -45,6 +45,7 @@ class SatelliteEnv(Env):
 
     def take_action(self, action: np.ndarray):
         """Move one link from a case to another one."""
+        print(action)
         self.state[action[0], :] = [action[1], action[2]]
 
     def is_legal_move(self) -> bool:
@@ -87,5 +88,4 @@ class SatelliteEnv(Env):
     def reset(self) -> np.ndarray:
         """Reset the environment to an initial state."""
         self.state = np.array([(i, i) for i in range(self.nb_links)])
-        self.set_group_modem_array()
         return self.state
