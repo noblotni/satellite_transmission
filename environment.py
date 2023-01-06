@@ -49,8 +49,8 @@ class SatelliteEnv(Env):
 
     def is_legal_move(self) -> bool:
         """Check if the move is legal."""
-        if np.sum(self.grp_mod_array) != self.nb_links:
-            return False
+        """if np.sum(self.grp_mod_array) != self.nb_links:
+            return False"""
         modems_ok = self.check_modems()
         groups_ok = self.check_groups()
         return modems_ok and groups_ok
@@ -59,7 +59,7 @@ class SatelliteEnv(Env):
         """Check if the modems are legal."""
         duplicate = []
         for s in self.state:
-            if s not in duplicate:
+            if not np.any(s == duplicate):#if s not in np.array(duplicate):
                 indices = set(np.where(self.state == s)[0])
                 links_indices = [self.links[indice] for indice in indices]
                 binary_flow = np.sum([link["binary_flow"] for link in links_indices])
@@ -73,7 +73,7 @@ class SatelliteEnv(Env):
         """ Check if the groups are legal"""
         duplicate = []
         for s in self.state:
-            if s not in duplicate:
+            if not np.any(s == duplicate):
                 indices = set(np.where(self.state[:,0] == s[0])[0])
                 links_indices = [self.links[indice] for indice in indices]
                 bandwidth = np.sum([link["bandwidth"] for link in links_indices])
