@@ -123,3 +123,7 @@ class SatelliteEnv(Env):
         for (i, s) in enumerate(self.state):
             self.grp_mod_array[i, s[0], s[1]] = 1
         return self.state
+
+    def render(self) -> None:
+        """Render the environment."""
+        print("State of the environment: ", self.state)
