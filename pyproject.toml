@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "satellite-transmission"
+version = "0.1.0"
+description = "Package to optimize a satellite transmission network with reinforcement learning."
+authors = ["Your Name <you@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "satellite_transmission"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+gym = "^0.26.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
