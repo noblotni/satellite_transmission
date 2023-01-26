@@ -6,12 +6,21 @@ import json
 NB_INSTANCES = 10
 
 # Links constants
-NB_LINKS = 300
-MAX_BANDWITH = 2
-MAX_BINARY_FLOW = 2
-MAX_SYMBOL_FLOW = 2
-MAX_INV_BIN_FLOW_REQ = 0.7
-MAX_GROUP_INV_BIN_FLOW = 0.8
+NB_LINKS = 100
+# Maximal bandwidth (kHz)
+MAX_BANDWIDTH = 20000
+# Minimal bandwidth (kHz)
+MIN_BANDWIDTH = 10
+# Maximal power of two for the binary rate
+MAX_POW_BIN_RATE = 14
+# Minimal power of two for the binary rate
+MIN_POW_BIN_RATE = 5
+# Maximal symbol rate (kbauds)
+MAX_SYMBOL_RATE = 15000
+# Minimal symbol rate (kbauds)
+MIN_SYMBOL_RATE = 10
+# Maximal binary rate in a group (kbps)
+MAX_GROUP_INV_BIN_RATE = 32768
 
 
 def generate_all_instances(nb_instances, folder_path: Path):
@@ -19,12 +28,16 @@ def generate_all_instances(nb_instances, folder_path: Path):
         links = []
         for _ in range(NB_LINKS):
             new_link = {}
-            new_link["bandwidth"] = np.random.uniform(0, MAX_BANDWITH)
-            new_link["binary_flow"] = np.random.uniform(0, MAX_BINARY_FLOW)
-            new_link["symbol_flow"] = np.random.uniform(0, MAX_SYMBOL_FLOW)
-            new_link["inverse_binary_flow"] = np.random.uniform(0, MAX_INV_BIN_FLOW_REQ)
-            new_link["group_inverse_binary_flow"] = np.random.uniform(
-                0, MAX_GROUP_INV_BIN_FLOW
+            new_link["bandwidth"] = np.random.uniform(MIN_BANDWIDTH, MAX_BANDWIDTH)
+            new_link["binary_rate"] = 2 ** (
+                np.random.randint(low=MIN_POW_BIN_RATE, high=MAX_POW_BIN_RATE + 1)
+            )
+            new_link["symbol_rate"] = np.random.uniform(
+                MIN_SYMBOL_RATE, MAX_SYMBOL_RATE
+            )
+            new_link["inverse_binary_rate"] = new_link["binary_rate"]
+            new_link["group_inverse_binary_rate"] = np.random.uniform(
+                new_link["inverse_binary_rate"], MAX_GROUP_INV_BIN_RATE
             )
             links.append(new_link)
             with open(folder_path / ("instance" + str(i) + ".json"), "w") as file:
