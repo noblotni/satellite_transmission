@@ -5,12 +5,16 @@ import numpy as np
 
 # Define constants
 # Modems constants
-MOD_NB_LINKS = 3
-MOD_BIN_FLOW = 3
-MOD_SYMB_FLOW = 3
+MOD_NB_LINKS = 4
+# Maximal binary rate of the modems (kbps)
+MOD_BIN_RATE = 16384
+# Maximal symbol rate of the modems (kbauds)
+MOD_SYMB_RATE = 16384
 # Groups constants
-GRP_NB_LINKS = 15
-GRP_BANDWIDTH = 30
+# Maximal number of links within a group
+GRP_NB_LINKS = 31
+# Maximal bandwidth within a group (kHz)
+GRP_BANDWIDTH = 56000
 
 
 class SatelliteEnv(Env):
@@ -82,11 +86,11 @@ class SatelliteEnv(Env):
             if not np.any(s == duplicate):  # if s not in np.array(duplicate):
                 indices = set(np.where(self.state == s)[0])
                 links_indices = [self.links[indice] for indice in indices]
-                binary_flow = np.sum([link["binary_flow"] for link in links_indices])
-                symbole_flow = np.sum([link["symbol_flow"] for link in links_indices])
+                binary_flow = np.sum([link["binary_rate"] for link in links_indices])
+                symbol_rate = np.sum([link["symbol_rate"] for link in links_indices])
             if (
-                binary_flow > MOD_BIN_FLOW
-                or symbole_flow > MOD_SYMB_FLOW
+                binary_flow > MOD_BIN_RATE
+                or symbol_rate > MOD_SYMB_RATE
                 or len(indices) > MOD_NB_LINKS
             ):
                 return False
@@ -101,16 +105,16 @@ class SatelliteEnv(Env):
                 indices = set(np.where(self.state[:, 0] == s[0])[0])
                 links_indices = [self.links[indice] for indice in indices]
                 bandwidth = np.sum([link["bandwidth"] for link in links_indices])
-                inverse_binary_flow = np.sum(
-                    [link["inverse_binary_flow"] for link in links_indices]
+                inverse_binary_rate = np.sum(
+                    [link["inverse_binary_rate"] for link in links_indices]
                 )
-                min_group_inverse_binary_flow = np.min(
-                    [link["group_inverse_binary_flow"] for link in links_indices]
+                min_group_inverse_binary_rate = np.min(
+                    [link["group_inverse_binary_rate"] for link in links_indices]
                 )
             if (
                 bandwidth > GRP_BANDWIDTH
                 or len(indices) > GRP_NB_LINKS
-                or inverse_binary_flow < min_group_inverse_binary_flow
+                or inverse_binary_rate < min_group_inverse_binary_rate
             ):
                 return False
             duplicate.append(s)
