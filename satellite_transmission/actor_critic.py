@@ -81,7 +81,6 @@ def plot_reward(rewards: list):
 
 
 def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
-    sigmoid_fn = nn.Sigmoid()
     env = SatelliteEnv(links)
     actor = ActorNetwork(obs_size=2 * len(links), action_size=3)
     critic = CriticNetwork(obs_size=2 * len(links))
@@ -91,10 +90,10 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
     actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
     critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
     rewards_list = []
-    for i in range(nb_episodes):
+    for _ in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
-        for _ in range(duration_episode):
+        for j in range(duration_episode):
             value_state = critic(
                 1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
             )
@@ -107,7 +106,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
             value_next_state = critic(torch.Tensor(next_state.flatten()))
             target = reward + GAMMA * value_next_state
             # Calculate losses
-            critic_loss = critic_loss_fn(sigmoid_fn(target), sigmoid_fn(value_state))
+            critic_loss = critic_loss_fn(target, value_state)
             actor_loss = -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
             # Perform backpropagation
             actor_optimizer.zero_grad()
@@ -116,7 +115,10 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
             critic_loss.backward()
             actor_optimizer.step()
             critic_optimizer.step()
-        rewards_list.append(cumulated_reward)
-        logging.info("Episode: {}, Cumulated reward: {}".format(i, cumulated_reward))
-        logging.info("Minimal sum found: {}".format(env.sum_mod_groups_min))
-    plot_reward(rewards_list)
+            rewards_list.append(cumulated_reward)
+            if j % 1000 == 0:
+                logging.info(
+                    "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
+                )
+                logging.info("Minimal sum found: {}".format(env.sum_mod_groups_min))
+                plot_reward(rewards_list)
