@@ -81,7 +81,7 @@ class SatelliteEnv(Env):
         # Memorize state and sum min
         if self.sum_mod_groups < self.sum_mod_groups_min:
             self.state_min = self.state
-            self.sum_mod_groups_min = self.sum_mod_groups_min
+            self.sum_mod_groups_min = self.sum_mod_groups
         return self.state, reward, False, {}
 
     def take_action(self, action: np.ndarray):
