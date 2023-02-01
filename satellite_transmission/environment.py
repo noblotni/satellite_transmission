@@ -31,6 +31,12 @@ class SatelliteEnv(Env):
         self.nb_links = len(self.links)
         self.grp_mod_array = np.zeros((self.nb_links, self.nb_links, self.nb_links))
         self.state = np.array([(i, i) for i in range(self.nb_links)])
+        # Memorize the sum of the number of modems and the number of groups
+        # for the current state
+        self.sum_mod_groups = 2 * self.nb_links
+        # Memorize the optimal sum and state
+        self.state_min = self.state
+        self.sum_mod_groups_min = 2 * self.nb_links
         # Fill the group-modem array
         for (i, s) in enumerate(self.state):
             self.grp_mod_array[i, s[0], s[1]] = 1
@@ -53,34 +59,46 @@ class SatelliteEnv(Env):
         """Compute the reward."""
         nb_modems = np.sum(self.grp_mod_array)
         nb_grps = np.sum(np.sum(np.sum(self.grp_mod_array, axis=-1), axis=1) > 0)
-        return -(nb_modems + nb_grps)
+        diff = (nb_modems + nb_grps) - self.sum_mod_groups
+        self.sum_mod_groups = nb_modems + nb_grps
+        # Memorize state and sum min
+        if self.sum_mod_groups < self.sum_mod_groups_min:
+            self.state_min = self.state
+            self.sum_mod_groups_min = self.sum_mod_groups_min
+        if diff == 0:
+            return -1
+        elif diff < 0:
+            return -10 * diff
+        elif diff > 0:
+            return -diff
 
     def step(self, action: np.ndarray) -> tuple:
         """Execute one time step within the environment."""
         state_before_action = np.copy(self.state)
+        grp_mod_array_before = np.copy(self.grp_mod_array)
         self.take_action(action)
         legal_move = self.is_legal_move()
         if not legal_move:
             self.state = state_before_action
+            self.grp_mod_array = grp_mod_array_before
         reward = self.reward_function()
         return self.state, reward, False, {}
 
     def take_action(self, action: np.ndarray):
         """Move one link from a case to another one."""
-        print(action)
         state_before = self.state[action[0], :]
         self.grp_mod_array[state_before[0], state_before[1]] = 0
         self.state[action[0], :] = [action[1], action[2]]
         self.grp_mod_array[action[0], action[1], action[2]] = 1
 
     def is_legal_move(self) -> bool:
-        """Check if the move is legal."""
+        """Check if the move respects the constraints."""
         modems_ok = self.check_modems()
         groups_ok = self.check_groups()
         return modems_ok and groups_ok
 
     def check_modems(self) -> bool:
-        """Check if the modems are legal."""
+        """Check if the modems respect the constraints."""
         duplicate = []
         for s in self.state:
             if not np.any(s == duplicate):  # if s not in np.array(duplicate):
@@ -98,7 +116,7 @@ class SatelliteEnv(Env):
         return True
 
     def check_groups(self) -> bool:
-        """Check if the groups are legal"""
+        """Check if the groups respect the constraints."""
         duplicate = []
         for s in self.state:
             if not np.any(s == duplicate):
@@ -114,7 +132,7 @@ class SatelliteEnv(Env):
             if (
                 bandwidth > GRP_BANDWIDTH
                 or len(indices) > GRP_NB_LINKS
-                or inverse_binary_rate < min_group_inverse_binary_rate
+                or inverse_binary_rate > min_group_inverse_binary_rate
             ):
                 return False
             duplicate.append(s)
@@ -124,6 +142,7 @@ class SatelliteEnv(Env):
         """Reset the environment to an initial state."""
         self.state = np.array([(i, i) for i in range(self.nb_links)])
         self.grp_mod_array = np.zeros((self.nb_links, self.nb_links, self.nb_links))
+        self.sum_mod_groups = 0
         for (i, s) in enumerate(self.state):
             self.grp_mod_array[i, s[0], s[1]] = 1
         return self.state
