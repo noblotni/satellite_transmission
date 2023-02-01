@@ -29,7 +29,7 @@ class SatelliteEnv(Env):
         super().__init__
         self.links = links
         self.nb_links = len(self.links)
-        self.grp_mod_array = np.zeros((self.nb_links, self.nb_links, self.nb_links))
+        self.grp_mod_array = np.zeros((self.nb_links, self.nb_links))
         self.state = np.array([(i, i) for i in range(self.nb_links)])
         # Memorize the sum of the number of modems and the number of groups
         # for the current state
@@ -58,13 +58,9 @@ class SatelliteEnv(Env):
     def reward_function(self) -> float:
         """Compute the reward."""
         nb_modems = np.sum(self.grp_mod_array)
-        nb_grps = np.sum(np.sum(np.sum(self.grp_mod_array, axis=-1), axis=1) > 0)
+        nb_grps = np.sum(np.sum(self.grp_mod_array, axis=1) > 0)
         diff = (nb_modems + nb_grps) - self.sum_mod_groups
         self.sum_mod_groups = nb_modems + nb_grps
-        # Memorize state and sum min
-        if self.sum_mod_groups < self.sum_mod_groups_min:
-            self.state_min = self.state
-            self.sum_mod_groups_min = self.sum_mod_groups_min
         if diff == 0:
             return -1
         elif diff < 0:
@@ -82,6 +78,10 @@ class SatelliteEnv(Env):
             self.state = state_before_action
             self.grp_mod_array = grp_mod_array_before
         reward = self.reward_function()
+        # Memorize state and sum min
+        if self.sum_mod_groups < self.sum_mod_groups_min:
+            self.state_min = self.state
+            self.sum_mod_groups_min = self.sum_mod_groups_min
         return self.state, reward, False, {}
 
     def take_action(self, action: np.ndarray):
@@ -141,10 +141,10 @@ class SatelliteEnv(Env):
     def reset(self) -> np.ndarray:
         """Reset the environment to an initial state."""
         self.state = np.array([(i, i) for i in range(self.nb_links)])
-        self.grp_mod_array = np.zeros((self.nb_links, self.nb_links, self.nb_links))
-        self.sum_mod_groups = 0
-        for (i, s) in enumerate(self.state):
-            self.grp_mod_array[i, s[0], s[1]] = 1
+        self.grp_mod_array = np.zeros((self.nb_links, self.nb_links))
+        self.sum_mod_groups = 2 * self.nb_links
+        for s in self.state:
+            self.grp_mod_array[s[0], s[1]] = 1
         return self.state
 
     def render(self) -> None:
