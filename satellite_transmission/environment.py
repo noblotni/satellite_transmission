@@ -38,8 +38,8 @@ class SatelliteEnv(Env):
         self.state_min = self.state
         self.sum_mod_groups_min = 2 * self.nb_links
         # Fill the group-modem array
-        for (i, s) in enumerate(self.state):
-            self.grp_mod_array[i, s[0], s[1]] = 1
+        for modem in self.state:
+            self.grp_mod_array[modem[0], modem[1]] = 1
         self.action_shape = (3,)
         self.action_space = spaces.Box(
             low=np.zeros(self.action_shape),
@@ -58,7 +58,7 @@ class SatelliteEnv(Env):
     def reward_function(self) -> float:
         """Compute the reward."""
         nb_modems = np.sum(self.grp_mod_array)
-        nb_grps = np.sum(np.sum(self.grp_mod_array, axis=1) > 0)
+        nb_grps = np.sum(np.sum(self.grp_mod_array, axis=1))
         diff = (nb_modems + nb_grps) - self.sum_mod_groups
         self.sum_mod_groups = nb_modems + nb_grps
         if diff == 0:
@@ -86,10 +86,10 @@ class SatelliteEnv(Env):
 
     def take_action(self, action: np.ndarray):
         """Move one link from a case to another one."""
-        state_before = self.state[action[0], :]
-        self.grp_mod_array[state_before[0], state_before[1]] = 0
+        modem_before = self.state[action[0], :]
+        self.grp_mod_array[modem_before[0], modem_before[1]] = 0
         self.state[action[0], :] = [action[1], action[2]]
-        self.grp_mod_array[action[0], action[1], action[2]] = 1
+        self.grp_mod_array[action[1], action[2]] = 1
 
     def is_legal_move(self) -> bool:
         """Check if the move respects the constraints."""
@@ -143,8 +143,8 @@ class SatelliteEnv(Env):
         self.state = np.array([(i, i) for i in range(self.nb_links)])
         self.grp_mod_array = np.zeros((self.nb_links, self.nb_links))
         self.sum_mod_groups = 2 * self.nb_links
-        for s in self.state:
-            self.grp_mod_array[s[0], s[1]] = 1
+        for modem in self.state:
+            self.grp_mod_array[modem[0], modem[1]] = 1
         return self.state
 
     def render(self) -> None:
