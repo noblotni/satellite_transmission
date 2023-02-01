@@ -62,11 +62,11 @@ class SatelliteEnv(Env):
         diff = (nb_modems + nb_grps) - self.sum_mod_groups
         self.sum_mod_groups = nb_modems + nb_grps
         if diff == 0:
-            return -1
+            return -((self.sum_mod_groups / self.sum_mod_groups_min) ** 0.5)
         elif diff < 0:
-            return -10 * diff
+            return -10 * diff * (self.sum_mod_groups_min / self.sum_mod_groups) ** 0.5
         elif diff > 0:
-            return -diff
+            return -diff * (self.sum_mod_groups / self.sum_mod_groups_min) ** 0.5
 
     def step(self, action: np.ndarray) -> tuple:
         """Execute one time step within the environment."""

@@ -5,9 +5,9 @@ from satellite_transmission.actor_critic import run_actor_critic
 
 
 def main():
-    with open(Path("./data/instances_100/instance0.json"), "r") as file:
+    with open(Path("./data/instances_100/instance2.json"), "r") as file:
         links = json.load(file)
-    run_actor_critic(links, nb_episodes=50, duration_episode=2000)
+    run_actor_critic(links, nb_episodes=1, duration_episode=50000)
 
 
 if __name__ == "__main__":
