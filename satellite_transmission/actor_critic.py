@@ -93,32 +93,41 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
     for _ in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
-        for j in range(duration_episode):
-            value_state = critic(
-                1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
-            )
-            action, action_clipped, norm_dist = sample_action(actor=actor, env=env)
-            # Observe action and reward
-            next_state, reward, _, _ = env.step(
-                action_clipped.detach().numpy().astype(int)
-            )
-            cumulated_reward += reward
-            value_next_state = critic(torch.Tensor(next_state.flatten()))
-            target = reward + GAMMA * value_next_state
-            # Calculate losses
-            critic_loss = critic_loss_fn(target, value_state)
-            actor_loss = -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
-            # Perform backpropagation
-            actor_optimizer.zero_grad()
-            critic_optimizer.zero_grad()
-            actor_loss.backward()
-            critic_loss.backward()
-            actor_optimizer.step()
-            critic_optimizer.step()
-            rewards_list.append(cumulated_reward)
-            if j % 1000 == 0:
-                logging.info(
-                    "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
+        try:
+            for j in range(duration_episode):
+                value_state = critic(
+                    1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
                 )
-                logging.info("Minimal sum found: {}".format(env.sum_mod_groups_min))
-                plot_reward(rewards_list)
+                action, action_clipped, norm_dist = sample_action(actor=actor, env=env)
+                # Observe action and reward
+                next_state, reward, _, _ = env.step(
+                    action_clipped.detach().numpy().astype(int)
+                )
+                cumulated_reward += reward
+                value_next_state = critic(torch.Tensor(next_state.flatten()))
+                target = reward + GAMMA * value_next_state
+                # Calculate losses
+                critic_loss = critic_loss_fn(target, value_state)
+                actor_loss = (
+                    -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
+                )
+                # Perform backpropagation
+                actor_optimizer.zero_grad()
+                critic_optimizer.zero_grad()
+                actor_loss.backward()
+                critic_loss.backward()
+                actor_optimizer.step()
+                critic_optimizer.step()
+                rewards_list.append(cumulated_reward)
+                if j % 1000 == 0:
+                    logging.info(
+                        "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
+                    )
+                    logging.info("Minimal sum found: {}".format(env.sum_mod_groups_min))
+                    plot_reward(rewards_list)
+
+        except ValueError:
+            # Prevent the algorithm from stopping
+            # if the loss of the actor becomes too
+            # big
+            pass
