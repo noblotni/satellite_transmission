@@ -5,11 +5,11 @@ import argparse
 from satellite_transmission.actor_critic import run_actor_critic
 
 
-def main():
-    with open(Path(args.links_path), "r") as file:
+def main(args):
+    with open(args.links_path, "r") as file:
         links = json.load(file)
     if args.algo == "actor-critic":
-        run_actor_critic(links, nb_episodes=1, duration_episode=50000)
+        run_actor_critic(links, nb_episodes=1, duration_episode=20000)
 
 
 if __name__ == "__main__":
@@ -21,5 +21,5 @@ if __name__ == "__main__":
         type=str,
         default="actor-critic",
     )
-    args = parser.parse_args
+    args = parser.parse_args()
     main(args)

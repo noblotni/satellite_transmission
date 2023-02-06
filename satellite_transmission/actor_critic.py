@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from satellite_transmission.environment import SatelliteEnv
 import matplotlib.pyplot as plt
+import numpy as np
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -90,6 +91,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
     actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
     critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
     rewards_list = []
+    modems_pictures_list = [env.grp_mod_array]
     for _ in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
@@ -119,6 +121,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                 actor_optimizer.step()
                 critic_optimizer.step()
                 rewards_list.append(cumulated_reward)
+                modems_pictures_list.append(env.grp_mod_array)
                 if j % 1000 == 0:
                     logging.info(
                         "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
@@ -131,3 +134,4 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
             # if the loss of the actor becomes too
             # big
             pass
+    np.savez_compressed("./grp_mod_arrays.npz", np.array(modems_pictures_list))
