@@ -60,6 +60,23 @@ class CriticNetwork(nn.Module):
         return x
 
 
+class agent():
+    def __init__(self):
+        self.a_opt = tf.keras.optimizers.Adam(learning_rate=7e-3)
+        self.c_opt = tf.keras.optimizers.Adam(learning_rate=7e-3)
+        self.actor = actor()
+        self.critic = critic()
+        self.clip_pram = 0.2
+
+          
+    def act(self,state):
+        prob = self.actor(np.array([state]))
+        prob = prob.numpy()
+        dist = tfp.distributions.Categorical(probs=prob, dtype=tf.float32)
+        action = dist.sample()
+        return int(action.numpy()[0])
+
+
 def sample_action(actor: ActorNetwork, env: SatelliteEnv):
     # Scale state
     state = 1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
