@@ -9,7 +9,7 @@ def main(args):
     with open(args.links_path, "r") as file:
         links = json.load(file)
     if args.algo == "actor-critic":
-        run_actor_critic(links, nb_episodes=1, duration_episode=20000)
+        run_actor_critic(links, nb_episodes=1, duration_episode=30000)
 
 
 if __name__ == "__main__":

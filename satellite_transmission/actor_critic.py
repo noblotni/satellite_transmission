@@ -15,7 +15,7 @@ HIDDEN_SIZE = 128
 GAMMA = 0.99
 # Learning rates
 LR_ACTOR = 0.0001
-LR_CRITIC = 0.0001
+LR_CRITIC = 0.001
 
 
 class ActorNetwork(nn.Module):
@@ -74,14 +74,20 @@ def sample_action(actor: ActorNetwork, env: SatelliteEnv):
     return action, action_clipped, norm_dist
 
 
-def plot_reward(rewards: list):
-    plt.plot(rewards)
-    plt.xlabel("Time step")
-    plt.ylabel("Cumulated reward")
-    plt.show()
-
-
 def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
+    """Run the actor-critic algorithm to solve the optimization problem.
+
+    Args:
+        links (list): list of satellite links to assign to modems and groups
+        nb_episodes (int): number of episodes to run
+        duration_episode (int): number of iterations of one episode
+
+    Returns:
+        state_min (np.ndarray): the minimal state found
+        nb_mod_min (int): the number of modems in the minimal state
+        nb_grps_min (int): the number of groups in the minimal group
+    """
+
     env = SatelliteEnv(links)
     actor = ActorNetwork(obs_size=2 * len(links), action_size=3)
     critic = CriticNetwork(obs_size=2 * len(links))
@@ -91,7 +97,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
     actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
     critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
     rewards_list = []
-    modems_pictures_list = [env.grp_mod_array]
+    grp_mod_arrays = []
     for _ in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
@@ -121,17 +127,22 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                 actor_optimizer.step()
                 critic_optimizer.step()
                 rewards_list.append(cumulated_reward)
-                modems_pictures_list.append(env.grp_mod_array)
+                grp_mod_arrays.append(env.grp_mod_array)
+                # Logs
                 if j % 1000 == 0:
                     logging.info(
                         "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
                     )
-                    logging.info("Minimal sum found: {}".format(env.sum_mod_groups_min))
-                    plot_reward(rewards_list)
-
+                    logging.info(
+                        "Minimal solution is : {} modems, {} groups".format(
+                            env.nb_mod_min, env.nb_grps_min
+                        )
+                    )
         except ValueError:
             # Prevent the algorithm from stopping
             # if the loss of the actor becomes too
             # big
             pass
-    np.savez_compressed("./grp_mod_arrays.npz", np.array(modems_pictures_list))
+        np.savez_compressed("./grp_mod_arrays.npz", np.array(grp_mod_arrays))
+
+    return env.state_min, env.nb_mod_min, env.nb_grps_min
