@@ -3,19 +3,20 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from satellite_transmission.environment import SatelliteEnv
-import matplotlib.pyplot as plt
-import numpy as np
+import satellite_transmission.config as config
 import logging
 
 logging.basicConfig(level=logging.INFO)
+# Set the number of threads for Pytorch
+# torch.set_num_threads(config.TORCH_NB_THREADS)
 
 # NN layers
 HIDDEN_SIZE = 128
 # Discount factor
 GAMMA = 0.99
 # Learning rates
-LR_ACTOR = 0.0001
-LR_CRITIC = 0.001
+LR_ACTOR = 0.00001
+LR_CRITIC = 0.0001
 
 
 class ActorNetwork(nn.Module):
@@ -117,7 +118,8 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                 # Calculate losses
                 critic_loss = critic_loss_fn(target, value_state)
                 actor_loss = (
-                    -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
+                    -norm_dist.log_prob(action.detach()).unsqueeze(0)
+                    * critic_loss.detach()
                 )
                 # Perform backpropagation
                 actor_optimizer.zero_grad()
@@ -143,6 +145,5 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
             # if the loss of the actor becomes too
             # big
             pass
-        np.savez_compressed("./grp_mod_arrays.npz", np.array(grp_mod_arrays))
 
     return env.state_min, env.nb_mod_min, env.nb_grps_min
