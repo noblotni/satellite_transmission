@@ -8,7 +8,7 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 # Set the number of threads for Pytorch
-# torch.set_num_threads(config.TORCH_NB_THREADS)
+torch.set_num_threads(config.TORCH_NB_THREADS)
 
 # NN layers
 HIDDEN_SIZE = 128
