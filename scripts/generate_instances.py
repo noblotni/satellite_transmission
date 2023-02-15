@@ -6,7 +6,7 @@ import json
 NB_INSTANCES = 10
 
 # Links constants
-NB_LINKS = 100
+NB_LINKS = 50
 # Maximal bandwidth (kHz)
 MAX_BANDWIDTH = 20000
 # Minimal bandwidth (kHz)
