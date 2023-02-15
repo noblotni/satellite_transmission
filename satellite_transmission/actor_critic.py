@@ -41,7 +41,7 @@ class ActorNetwork(nn.Module):
             loc=mu, covariance_matrix=torch.diag(sigma_diag)
         )
         x = norm_dist.sample()
-        return x, norm_dist
+        return x.detach(), norm_dist
 
 
 class CriticNetwork(nn.Module):
@@ -98,7 +98,6 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
     actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
     critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
     rewards_list = []
-    grp_mod_arrays = []
     for _ in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
@@ -109,17 +108,14 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                 )
                 action, action_clipped, norm_dist = sample_action(actor=actor, env=env)
                 # Observe action and reward
-                next_state, reward, _, _ = env.step(
-                    action_clipped.detach().numpy().astype(int)
-                )
+                next_state, reward, _, _ = env.step(action_clipped.numpy().astype(int))
                 cumulated_reward += reward
                 value_next_state = critic(torch.Tensor(next_state.flatten()))
-                target = reward + GAMMA * value_next_state
+                target = reward + GAMMA * value_next_state.detach()
                 # Calculate losses
-                critic_loss = critic_loss_fn(target, value_state)
+                critic_loss = critic_loss_fn(value_state, target)
                 actor_loss = (
-                    -norm_dist.log_prob(action.detach()).unsqueeze(0)
-                    * critic_loss.detach()
+                    -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
                 )
                 # Perform backpropagation
                 actor_optimizer.zero_grad()
@@ -129,7 +125,6 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                 actor_optimizer.step()
                 critic_optimizer.step()
                 rewards_list.append(cumulated_reward)
-                grp_mod_arrays.append(env.grp_mod_array)
                 # Logs
                 if j % 1000 == 0:
                     logging.info(
@@ -140,6 +135,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                             env.nb_mod_min, env.nb_grps_min
                         )
                     )
+
         except ValueError:
             # Prevent the algorithm from stopping
             # if the loss of the actor becomes too
