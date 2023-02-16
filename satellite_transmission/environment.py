@@ -30,13 +30,16 @@ class SatelliteEnv(Env):
         self.links = links
         self.nb_links = len(self.links)
         self.grp_mod_array = np.zeros((self.nb_links, self.nb_links))
+        # State variables for the current state
         self.state = np.array([(i, i) for i in range(self.nb_links)])
-        # Memorize the sum of the number of modems and the number of groups
-        # for the current state
-        self.sum_mod_groups = 2 * self.nb_links
-        # Memorize the optimal sum and state
+        # Number of modems
+        self.nb_mod = self.nb_links
+        # Number of groups
+        self.nb_grps = self.nb_links
+        # Memorize the optimal state variables
         self.state_min = self.state
-        self.sum_mod_groups_min = 2 * self.nb_links
+        self.nb_mod_min = self.nb_links
+        self.nb_grps_min = self.nb_links
         # Fill the group-modem array
         for modem in self.state:
             self.grp_mod_array[modem[0], modem[1]] = 1
@@ -58,30 +61,37 @@ class SatelliteEnv(Env):
     def reward_function(self) -> float:
         """Compute the reward."""
         nb_modems = np.sum(self.grp_mod_array)
-        nb_grps = np.sum(np.sum(self.grp_mod_array, axis=1))
-        diff = (nb_modems + nb_grps) - self.sum_mod_groups
-        self.sum_mod_groups = nb_modems + nb_grps
+        nb_grps = np.sum(np.sum(self.grp_mod_array, axis=1) > 0)
+        diff = (nb_modems + nb_grps) - (self.nb_grps + self.nb_mod)
+        self.nb_mod = nb_modems
+        self.nb_grps = nb_grps
+        ratio = (self.nb_grps_min * self.nb_mod_min) / (self.nb_grps * self.nb_mod)
         if diff == 0:
-            return -((self.sum_mod_groups / self.sum_mod_groups_min) ** 0.5)
+            return -((self.nb_mod / self.nb_links)) * (1 / ratio) ** 0.5
         elif diff < 0:
-            return -10 * diff * (self.sum_mod_groups_min / self.sum_mod_groups) ** 0.5
+            return -10 * diff * (self.nb_links / self.nb_mod) * (ratio) ** 0.5
         elif diff > 0:
-            return -diff * (self.sum_mod_groups / self.sum_mod_groups_min) ** 0.5
+            return -diff * (self.nb_mod / self.nb_links) * (1 / ratio) ** 0.5
 
     def step(self, action: np.ndarray) -> tuple:
         """Execute one time step within the environment."""
+        # Copy variables before action
         state_before_action = np.copy(self.state)
         grp_mod_array_before = np.copy(self.grp_mod_array)
         self.take_action(action)
         legal_move = self.is_legal_move()
+        # Reset the environment
+        # previous state if
+        # the action dos not respect the constraints
         if not legal_move:
             self.state = state_before_action
             self.grp_mod_array = grp_mod_array_before
         reward = self.reward_function()
-        # Memorize state and sum min
-        if self.sum_mod_groups < self.sum_mod_groups_min:
+        # Memorize optimal state variables
+        if self.nb_mod_min + self.nb_grps_min > self.nb_mod + self.nb_grps:
             self.state_min = self.state
-            self.sum_mod_groups_min = self.sum_mod_groups
+            self.nb_grps_min = self.nb_grps
+            self.nb_mod_min = self.nb_mod
         return self.state, reward, False, {}
 
     def take_action(self, action: np.ndarray):
@@ -99,43 +109,39 @@ class SatelliteEnv(Env):
 
     def check_modems(self) -> bool:
         """Check if the modems respect the constraints."""
-        duplicate = []
         for s in self.state:
-            if not np.any(s == duplicate):  # if s not in np.array(duplicate):
-                indices = set(np.where(self.state == s)[0])
-                links_indices = [self.links[indice] for indice in indices]
-                binary_flow = np.sum([link["binary_flow"] for link in links_indices])
-                symbol_rate = np.sum([link["symbol_flow"] for link in links_indices])
+            indices = np.where(
+                np.logical_and(self.state[:, 0] == s[0], self.state[:, 1] == s[1])
+            )[0]
+            links_in_modem = [self.links[indice] for indice in indices]
+            binary_flow = np.sum([link["binary_rate"] for link in links_in_modem])
+            symbol_rate = np.sum([link["symbol_rate"] for link in links_in_modem])
             if (
-                binary_flow > MOD_BIN_RATE
+                len(indices) > MOD_NB_LINKS
+                or binary_flow > MOD_BIN_RATE
                 or symbol_rate > MOD_SYMB_RATE
-                or len(indices) > MOD_NB_LINKS
             ):
                 return False
-            duplicate.append(s)
         return True
 
     def check_groups(self) -> bool:
         """Check if the groups respect the constraints."""
-        duplicate = []
         for s in self.state:
-            if not np.any(s == duplicate):
-                indices = set(np.where(self.state[:, 0] == s[0])[0])
-                links_indices = [self.links[indice] for indice in indices]
-                bandwidth = np.sum([link["bandwidth"] for link in links_indices])
-                inverse_binary_rate = np.sum(
-                    [link["inverse_binary_flow"] for link in links_indices]
-                )
-                min_group_inverse_binary_rate = np.min(
-                    [link["group_inverse_binary_flow"] for link in links_indices]
-                )
+            indices = np.where(self.state[:, 0] == s[0])[0]
+            links_in_group = [self.links[indice] for indice in indices]
+            bandwidth = np.sum([link["bandwidth"] for link in links_in_group])
+            inverse_binary_rate = np.sum(
+                [link["inverse_binary_rate"] for link in links_in_group]
+            )
+            min_group_inverse_binary_rate = np.min(
+                [link["group_inverse_binary_rate"] for link in links_in_group]
+            )
             if (
                 bandwidth > GRP_BANDWIDTH
                 or len(indices) > GRP_NB_LINKS
                 or inverse_binary_rate > min_group_inverse_binary_rate
             ):
                 return False
-            duplicate.append(s)
         return True
 
     def reset(self) -> np.ndarray:

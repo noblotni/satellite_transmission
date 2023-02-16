@@ -48,11 +48,11 @@ class RolloutBuffer:
         del self.rewards[:]
         del self.state_values[:]
         del self.is_terminals[:]
-
-
+    
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(ActorCritic, self).__init__()
+        self.state_dim = state_dim
        # actor
         self.actor = nn.Sequential(
                         nn.Linear(state_dim, HIDDEN_SIZE),
@@ -75,22 +75,45 @@ class ActorCritic(nn.Module):
         raise NotImplementedError
     
     def act(self, state):
-        action_probs = self.actor(state)
-        dist = Categorical(action_probs)
+        action_probs = self.actor(torch.transpose(state, 0, 1))
+        #print(action_probs[0], torch.Tensor.mean(action_probs[0]))
+        
+        norm_dist = torch.distributions.MultivariateNormal(
+            loc=action_probs[0], covariance_matrix=torch.diag(action_probs[0])
+        )
+        action = norm_dist.sample()
 
-        action = dist.sample()
-        action_logprob = dist.log_prob(action)
-        state_val = self.critic(state)
+        """dist = Categorical(action_probs)
+        action = dist.sample()"""
+        
+        action_logprob = norm_dist.log_prob(action)
+        state_val = self.critic(torch.transpose(state, 0, 1))[0]
 
-        return action.detach(), action_logprob.detach(), state_val.detach()
+        action_clipped = torch.clip(
+            (self.state_dim - 1) * action,
+            min=torch.zeros(3, dtype=torch.int),
+            max=torch.Tensor([self.state_dim - 1, self.state_dim - 1, self.state_dim - 1]),
+        ).int()
+
+        return action_clipped.detach(), action.detach(), action_logprob.detach(), state_val.detach()
     
     def evaluate(self, state, action):
-        action_probs = self.actor(state)
-        dist = Categorical(action_probs)
-        action_logprobs = dist.log_prob(action)
-        dist_entropy = dist.entropy()
-        state_values = self.critic(state)
-        
+        action_probs = []
+        for i in range(state.shape[0]):
+            action_probs.append(self.actor(torch.transpose(state[i], 0, 1))[0])
+        action_probs = torch.stack(action_probs)
+       
+        #dist = Categorical(action_probs)
+        norm_dist = torch.distributions.MultivariateNormal(
+            loc=action_probs[0], covariance_matrix=torch.diag(action_probs[0])
+        )
+        action_logprobs = norm_dist.log_prob(action)
+        dist_entropy = norm_dist.entropy()        
+        state_values = []
+        for i in range(state.shape[0]):
+            state_values.append(self.critic(torch.transpose(state[i], 0, 1))[0])
+        state_values = torch.stack(state_values)
+
         return action_logprobs, state_values, dist_entropy
 
 
@@ -116,14 +139,13 @@ class PPO:
     def select_action(self, state):
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            action, action_logprob, state_val = self.policy_old.act(state)
+            action_clipped, action, action_logprob, state_val = self.policy_old.act(state)
         
         self.buffer.states.append(state)
         self.buffer.actions.append(action)
         self.buffer.logprobs.append(action_logprob)
         self.buffer.state_values.append(state_val)
-
-        return action.item()
+        return action_clipped
 
     def update(self):
         # Monte Carlo estimate of returns
@@ -153,7 +175,7 @@ class PPO:
 
             # Evaluating old actions and values
             logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
-
+            
             # match state_values tensor dimensions with rewards tensor
             state_values = torch.squeeze(state_values)
             
@@ -172,6 +194,10 @@ class PPO:
             loss.mean().backward()
             self.optimizer.step()
             
+        min_nb_modem = np.unique(old_states[-1].numpy()[:,0]).shape[0]
+        min_nb_group = np.unique(old_states[-1].numpy()[:,1]).shape[0]
+        print("min_nb_modem: ", min_nb_modem, "min_nb_group: ", min_nb_group)
+
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())
 

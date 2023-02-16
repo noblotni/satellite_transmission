@@ -8,18 +8,18 @@ from ppo import PPO
 from environment import SatelliteEnv
 
 ################################### Training ###################################
-def train(link_path="instances_300/instance0.json"):
+def train(link_path="scripts/instances_100/instance0.json"):
     print("============================================================================================")
 
     ####### initialize environment hyperparameters ######
     env_name = "SatelliteEnv"
 
-    max_ep_len = 1000                   # max timesteps in one episode
-    max_training_timesteps = int(3e6)   # break training loop if timeteps > max_training_timesteps
+    max_ep_len = 1000                  # max timesteps in one episode
+    max_training_timesteps = int(3e4)   # break training loop if timeteps > max_training_timesteps
 
-    print_freq = max_ep_len * 10        # print avg reward in the interval (in num timesteps)
+    print_freq = max_ep_len  *2        # print avg reward in the interval (in num timesteps)
     log_freq = max_ep_len * 2           # log avg reward in the interval (in num timesteps)
-    save_model_freq = int(1e5)          # save model frequency (in num timesteps)
+    save_model_freq = int(1000)          # save model frequency (in num timesteps)
 
     #####################################################
 
@@ -27,7 +27,7 @@ def train(link_path="instances_300/instance0.json"):
 
     ################ PPO hyperparameters ################
     update_timestep = max_ep_len * 4      # update policy every n timesteps
-    K_epochs = 80           # update policy for K epochs in one PPO update
+    K_epochs = 5           # update policy for K epochs in one PPO update
 
     eps_clip = 0.2          # clip parameter for PPO
     gamma = 0.99            # discount factor
@@ -226,6 +226,4 @@ def train(link_path="instances_300/instance0.json"):
 
 if __name__ == '__main__':
     train()
-    
-    
     
