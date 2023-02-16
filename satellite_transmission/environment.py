@@ -104,8 +104,8 @@ class SatelliteEnv(Env):
             if not np.any(s == duplicate):  # if s not in np.array(duplicate):
                 indices = set(np.where(self.state == s)[0])
                 links_indices = [self.links[indice] for indice in indices]
-                binary_flow = np.sum([link["binary_rate"] for link in links_indices])
-                symbol_rate = np.sum([link["symbol_rate"] for link in links_indices])
+                binary_flow = np.sum([link["binary_flow"] for link in links_indices])
+                symbol_rate = np.sum([link["symbol_flow"] for link in links_indices])
             if (
                 binary_flow > MOD_BIN_RATE
                 or symbol_rate > MOD_SYMB_RATE
@@ -124,10 +124,10 @@ class SatelliteEnv(Env):
                 links_indices = [self.links[indice] for indice in indices]
                 bandwidth = np.sum([link["bandwidth"] for link in links_indices])
                 inverse_binary_rate = np.sum(
-                    [link["inverse_binary_rate"] for link in links_indices]
+                    [link["inverse_binary_flow"] for link in links_indices]
                 )
                 min_group_inverse_binary_rate = np.min(
-                    [link["group_inverse_binary_rate"] for link in links_indices]
+                    [link["group_inverse_binary_flow"] for link in links_indices]
                 )
             if (
                 bandwidth > GRP_BANDWIDTH
