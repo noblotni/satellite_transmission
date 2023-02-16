@@ -2,11 +2,25 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from satellite_transmission.environment import SatelliteEnv
 import matplotlib.pyplot as plt
 import logging
-
+import numpy as np
+from torch.distributions import MultivariateNormal
+from torch.distributions import Categorical
 logging.basicConfig(level=logging.INFO)
+
+# =========================== Hyperparameters ===========================
+################################## set device ##################################
+print("============================================================================================")
+# set device to cpu or cuda
+device = torch.device('cpu')
+if(torch.cuda.is_available()): 
+    device = torch.device('cuda:0') 
+    torch.cuda.empty_cache()
+    print("Device set to : " + str(torch.cuda.get_device_name(device)))
+else:
+    print("Device set to : cpu")
+print("============================================================================================")
 
 # NN layers
 HIDDEN_SIZE = 128
@@ -17,134 +31,156 @@ LR_ACTOR = 0.0001
 LR_CRITIC = 0.0001
 
 
-class ActorNetwork(nn.Module):
-    def __init__(self, obs_size, action_size):
-        """Map a state to an action."""
-        super().__init__()
-        self.fc1_layer = nn.Linear(obs_size, HIDDEN_SIZE)
-        self.fc2_layer = nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE)
-        self.mu_out_layer = nn.Sequential(
-            nn.Linear(HIDDEN_SIZE, action_size), nn.Sigmoid()
-        )
-        self.sigma_out_layer = nn.Sequential(
-            nn.Linear(HIDDEN_SIZE, action_size), nn.Softplus()
-        )
-
-    def forward(self, x):
-        x = self.fc1_layer(x)
-        x = self.fc2_layer(x)
-        mu = self.mu_out_layer(x)
-        sigma_diag = self.sigma_out_layer(x)
-        norm_dist = torch.distributions.MultivariateNormal(
-            loc=mu, covariance_matrix=torch.diag(sigma_diag)
-        )
-        x = norm_dist.sample()
-        return x, norm_dist
-
-
-class CriticNetwork(nn.Module):
-    def __init__(self, obs_size):
-        """Map a state to a quality-value."""
-        super().__init__()
-        self.fc1_layer = nn.Linear(obs_size, HIDDEN_SIZE)
-        self.fc2_layer = nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE)
-        self.critic_out_layer = nn.Linear(HIDDEN_SIZE, 1)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        x = self.fc1_layer(x)
-        x = self.sigmoid(x)
-        x = self.fc2_layer(x)
-        x = self.sigmoid(x)
-        x = self.critic_out_layer(x)
-        return x
-
-
-class agent():
+################################## PPO Policy ##################################
+class RolloutBuffer:
     def __init__(self):
-        self.a_opt = tf.keras.optimizers.Adam(learning_rate=7e-3)
-        self.c_opt = tf.keras.optimizers.Adam(learning_rate=7e-3)
-        self.actor = actor()
-        self.critic = critic()
-        self.clip_pram = 0.2
-
-          
-    def act(self,state):
-        prob = self.actor(np.array([state]))
-        prob = prob.numpy()
-        dist = tfp.distributions.Categorical(probs=prob, dtype=tf.float32)
-        action = dist.sample()
-        return int(action.numpy()[0])
-
-
-def sample_action(actor: ActorNetwork, env: SatelliteEnv):
-    # Scale state
-    state = 1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
-    action, norm_dist = actor(state)
-    # Clip the action so that the values are in the action space
-    action_clipped = torch.clip(
-        (env.nb_links - 1) * action,
-        min=torch.zeros(3, dtype=torch.int),
-        max=torch.Tensor([env.nb_links - 1, env.nb_links - 1, env.nb_links - 1]),
-    )
-    return action, action_clipped, norm_dist
+        self.actions = []
+        self.states = []
+        self.logprobs = []
+        self.rewards = []
+        self.state_values = []
+        self.is_terminals = []
+    
+    def clear(self):
+        del self.actions[:]
+        del self.states[:]
+        del self.logprobs[:]
+        del self.rewards[:]
+        del self.state_values[:]
+        del self.is_terminals[:]
 
 
-def plot_reward(rewards: list):
-    plt.plot(rewards)
-    plt.xlabel("Time step")
-    plt.ylabel("Cumulated reward")
-    plt.show()
-
-
-def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
-    env = SatelliteEnv(links)
-    actor = ActorNetwork(obs_size=2 * len(links), action_size=3)
-    critic = CriticNetwork(obs_size=2 * len(links))
-    # Initiliaze loss
-    critic_loss_fn = nn.MSELoss()
-    # Initialize optimizers
-    actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
-    critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
-    rewards_list = []
-    for _ in range(nb_episodes):
-        env.reset()
-        cumulated_reward = 0
-        try:
-            for j in range(duration_episode):
-                value_state = critic(
-                    1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
-                )
-                action, action_clipped, norm_dist = sample_action(actor=actor, env=env)
-                # Observe action and reward
-                next_state, reward, _, _ = env.step(
-                    action_clipped.detach().numpy().astype(int)
-                )
-                cumulated_reward += reward
-                value_next_state = critic(torch.Tensor(next_state.flatten()))
-                target = reward + GAMMA * value_next_state
-                # Calculate losses
-                critic_loss = critic_loss_fn(target, value_state)
-                actor_loss = (
-                    -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
-                )
-                # Perform backpropagation
-                actor_optimizer.zero_grad()
-                critic_optimizer.zero_grad()
-                actor_loss.backward()
-                critic_loss.backward()
-                actor_optimizer.step()
-                critic_optimizer.step()
-                rewards_list.append(cumulated_reward)
-                if j % 1000 == 0:
-                    logging.info(
-                        "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
+class ActorCritic(nn.Module):
+    def __init__(self, state_dim, action_dim):
+        super(ActorCritic, self).__init__()
+       # actor
+        self.actor = nn.Sequential(
+                        nn.Linear(state_dim, HIDDEN_SIZE),
+                        nn.Tanh(),
+                        nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE),
+                        nn.Tanh(),
+                        nn.Linear(HIDDEN_SIZE, action_dim),
+                        nn.Softmax(dim=-1)
                     )
-                    logging.info("Minimal sum found: {}".format(env.sum_mod_groups_min))
-                    plot_reward(rewards_list)
+        # critic
+        self.critic = nn.Sequential(
+                        nn.Linear(state_dim, HIDDEN_SIZE),
+                        nn.Tanh(),
+                        nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE),
+                        nn.Tanh(),
+                        nn.Linear(HIDDEN_SIZE, 1)
+                    )
+                    
+    def forward(self):
+        raise NotImplementedError
+    
+    def act(self, state):
+        action_probs = self.actor(state)
+        dist = Categorical(action_probs)
 
-        except ValueError:
-            # Prevent the algorithm from stopping
-            # if the loss of the actor becomes too
-            # big
-            pass
+        action = dist.sample()
+        action_logprob = dist.log_prob(action)
+        state_val = self.critic(state)
+
+        return action.detach(), action_logprob.detach(), state_val.detach()
+    
+    def evaluate(self, state, action):
+        action_probs = self.actor(state)
+        dist = Categorical(action_probs)
+        action_logprobs = dist.log_prob(action)
+        dist_entropy = dist.entropy()
+        state_values = self.critic(state)
+        
+        return action_logprobs, state_values, dist_entropy
+
+
+class PPO:
+    def __init__(self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip):
+        self.gamma = gamma
+        self.eps_clip = eps_clip
+        self.K_epochs = K_epochs
+        
+        self.buffer = RolloutBuffer()
+
+        self.policy = ActorCritic(state_dim, action_dim).to(device)
+        self.optimizer = torch.optim.Adam([
+                        {'params': self.policy.actor.parameters(), 'lr': lr_actor},
+                        {'params': self.policy.critic.parameters(), 'lr': lr_critic}
+                    ])
+
+        self.policy_old = ActorCritic(state_dim, action_dim).to(device)
+        self.policy_old.load_state_dict(self.policy.state_dict())
+
+        self.MseLoss = nn.MSELoss()
+
+    def select_action(self, state):
+        with torch.no_grad():
+            state = torch.FloatTensor(state).to(device)
+            action, action_logprob, state_val = self.policy_old.act(state)
+        
+        self.buffer.states.append(state)
+        self.buffer.actions.append(action)
+        self.buffer.logprobs.append(action_logprob)
+        self.buffer.state_values.append(state_val)
+
+        return action.item()
+
+    def update(self):
+        # Monte Carlo estimate of returns
+        rewards = []
+        discounted_reward = 0
+        for reward, is_terminal in zip(reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)):
+            if is_terminal:
+                discounted_reward = 0
+            discounted_reward = reward + (self.gamma * discounted_reward)
+            rewards.insert(0, discounted_reward)
+            
+        # Normalizing the rewards
+        rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
+        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+
+        # convert list to tensor
+        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
+        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
+        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
+        old_state_values = torch.squeeze(torch.stack(self.buffer.state_values, dim=0)).detach().to(device)
+
+        # calculate advantages
+        advantages = rewards.detach() - old_state_values.detach()
+
+        # Optimize policy for K epochs
+        for _ in range(self.K_epochs):
+
+            # Evaluating old actions and values
+            logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
+
+            # match state_values tensor dimensions with rewards tensor
+            state_values = torch.squeeze(state_values)
+            
+            # Finding the ratio (pi_theta / pi_theta__old)
+            ratios = torch.exp(logprobs - old_logprobs.detach())
+
+            # Finding Surrogate Loss  
+            surr1 = ratios * advantages
+            surr2 = torch.clamp(ratios, 1-self.eps_clip, 1+self.eps_clip) * advantages
+
+            # final loss of clipped objective PPO
+            loss = -torch.min(surr1, surr2) + 0.5 * self.MseLoss(state_values, rewards) - 0.01 * dist_entropy
+            
+            # take gradient step
+            self.optimizer.zero_grad()
+            loss.mean().backward()
+            self.optimizer.step()
+            
+        # Copy new weights into old policy
+        self.policy_old.load_state_dict(self.policy.state_dict())
+
+        # clear buffer
+        self.buffer.clear()
+    
+    def save(self, checkpoint_path):
+        torch.save(self.policy_old.state_dict(), checkpoint_path)
+   
+    def load(self, checkpoint_path):
+        self.policy_old.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
+        self.policy.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
