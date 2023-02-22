@@ -7,7 +7,7 @@ import json
 NB_INSTANCES = 10
 
 # Links constants
-NB_LINKS = 50
+NB_LINKS = 100
 # Maximal bandwidth (kHz)
 MAX_BANDWIDTH = 20000
 # Minimal bandwidth (kHz)
@@ -33,7 +33,7 @@ def generate_all_instances(nb_instances, folder_path: Path):
         )
         symbol_rate = np.random.uniform(MIN_SYMBOL_RATE, MAX_SYMBOL_RATE)
         group_inverse_inverse_binary_rate = np.random.uniform(
-            new_link["inverse_binary_rate"], MAX_GROUP_INV_BIN_RATE
+            binary_rate, MAX_GROUP_INV_BIN_RATE
         )
         for _ in range(NB_LINKS):
             new_link = {}
@@ -44,7 +44,7 @@ def generate_all_instances(nb_instances, folder_path: Path):
             new_link["group_inverse_binary_rate"] = group_inverse_inverse_binary_rate
             links.append(new_link)
             with open(folder_path / ("instance" + str(i) + ".json"), "w") as file:
-                json.dump(links, file)
+                json.dump(links, file, indent=4, sort_keys=True)
 
 
 def main():
