@@ -1,3 +1,4 @@
+"""Generate instances that are easy to solve."""
 from pathlib import Path
 import numpy as np
 import json
@@ -26,27 +27,29 @@ MAX_GROUP_INV_BIN_RATE = 32768
 def generate_all_instances(nb_instances, folder_path: Path):
     for i in range(nb_instances):
         links = []
+        bandwidth = np.random.uniform(MIN_BANDWIDTH, MAX_BANDWIDTH)
+        binary_rate = 2 ** (
+            np.random.randint(low=MIN_POW_BIN_RATE, high=MAX_POW_BIN_RATE + 1)
+        )
+        symbol_rate = np.random.uniform(MIN_SYMBOL_RATE, MAX_SYMBOL_RATE)
+        group_inverse_inverse_binary_rate = np.random.uniform(
+            binary_rate, MAX_GROUP_INV_BIN_RATE
+        )
         for _ in range(NB_LINKS):
             new_link = {}
-            new_link["bandwidth"] = np.random.uniform(MIN_BANDWIDTH, MAX_BANDWIDTH)
-            new_link["binary_rate"] = 2 ** (
-                np.random.randint(low=MIN_POW_BIN_RATE, high=MAX_POW_BIN_RATE + 1)
-            )
-            new_link["symbol_rate"] = np.random.uniform(
-                MIN_SYMBOL_RATE, MAX_SYMBOL_RATE
-            )
+            new_link["bandwidth"] = bandwidth
+            new_link["binary_rate"] = binary_rate
+            new_link["symbol_rate"] = symbol_rate
             new_link["inverse_binary_rate"] = new_link["binary_rate"]
-            new_link["group_inverse_binary_rate"] = np.random.uniform(
-                new_link["inverse_binary_rate"], MAX_GROUP_INV_BIN_RATE
-            )
+            new_link["group_inverse_binary_rate"] = group_inverse_inverse_binary_rate
             links.append(new_link)
             with open(folder_path / ("instance" + str(i) + ".json"), "w") as file:
-                json.dump(links, file)
+                json.dump(links, file, indent=4, sort_keys=True)
 
 
 def main():
 
-    folder_path = Path("./instances_" + str(NB_LINKS))
+    folder_path = Path("./instances_easy_" + str(NB_LINKS))
     if not (folder_path.exists()):
         folder_path.mkdir()
 
