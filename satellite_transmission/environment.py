@@ -65,13 +65,25 @@ class SatelliteEnv(Env):
         diff = (nb_modems + nb_grps) - (self.nb_grps + self.nb_mod)
         self.nb_mod = nb_modems
         self.nb_grps = nb_grps
+        ratio = (self.nb_mod * self.nb_grps) / (self.nb_links * self.nb_links)
+        if diff == 0:
+            return -((ratio) ** 0.5)
+        elif diff < 0:
+            return -10 * diff * (1 / ratio) ** 0.5
+        elif diff > 0:
+            return -diff * (ratio) ** 0.5
+        """nb_modems = np.sum(self.grp_mod_array)
+        nb_grps = np.sum(np.sum(self.grp_mod_array, axis=1) > 0)
+        diff = (nb_modems + nb_grps) - (self.nb_grps + self.nb_mod)
+        self.nb_mod = nb_modems
+        self.nb_grps = nb_grps
         ratio = (self.nb_grps_min * self.nb_mod_min) / (self.nb_grps * self.nb_mod)
         if diff == 0:
             return -((self.nb_mod / self.nb_links)) * (1 / ratio) ** 0.5
         elif diff < 0:
             return -10 * diff * (self.nb_links / self.nb_mod) * (ratio) ** 0.5
         elif diff > 0:
-            return -diff * (self.nb_mod / self.nb_links) * (1 / ratio) ** 0.5
+            return -diff * (self.nb_mod / self.nb_links) * (1 / ratio) ** 0.5"""
 
     def step(self, action: np.ndarray) -> tuple:
         """Execute one time step within the environment."""
