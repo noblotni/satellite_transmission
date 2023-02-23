@@ -1,3 +1,4 @@
+"""Generate random instances."""
 from pathlib import Path
 import numpy as np
 import json
@@ -41,7 +42,7 @@ def generate_all_instances(nb_instances, folder_path: Path):
             )
             links.append(new_link)
             with open(folder_path / ("instance" + str(i) + ".json"), "w") as file:
-                json.dump(links, file)
+                json.dump(links, file, indent=4, sort_keys=True)
 
 
 def main():

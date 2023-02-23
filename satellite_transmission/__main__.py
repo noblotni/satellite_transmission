@@ -1,3 +1,4 @@
+"""Run the optimization algorithm."""
 import json
 from pathlib import Path
 import argparse
@@ -15,7 +16,7 @@ def main(args):
         )
     elif args.algo == "ppo":
         state_min, _, _ = run_ppo(
-            links, nb_episodes=int(3e4), duration_episode=1000
+            links, nb_episodes=args.nb_episodes, duration_episode=args.duration_episode
         )
 
     generate_solution_report(

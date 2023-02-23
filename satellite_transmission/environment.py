@@ -41,8 +41,8 @@ class SatelliteEnv(Env):
         self.nb_mod_min = self.nb_links
         self.nb_grps_min = self.nb_links
         # Fill the group-modem array
-        for modem in self.state:
-            self.grp_mod_array[modem[0], modem[1]] = 1
+        self.update_grp_mod_array()
+        
         self.action_shape = (3,)
         self.action_space = spaces.Box(
             low=np.zeros(self.action_shape),
@@ -89,23 +89,26 @@ class SatelliteEnv(Env):
         reward = self.reward_function()
         # Memorize optimal state variables
         if self.nb_mod_min + self.nb_grps_min > self.nb_mod + self.nb_grps:
-            self.state_min = self.state
+            self.state_min = np.copy(self.state)
             self.nb_grps_min = self.nb_grps
             self.nb_mod_min = self.nb_mod
         return self.state, reward, False, {}
 
     def take_action(self, action: np.ndarray):
         """Move one link from a case to another one."""
-        modem_before = self.state[action[0], :]
-        self.grp_mod_array[modem_before[0], modem_before[1]] = 0
         self.state[action[0], :] = [action[1], action[2]]
-        self.grp_mod_array[action[1], action[2]] = 1
+        self.update_grp_mod_array()
 
     def is_legal_move(self) -> bool:
         """Check if the move respects the constraints."""
         modems_ok = self.check_modems()
         groups_ok = self.check_groups()
         return modems_ok and groups_ok
+
+    def update_grp_mod_array(self):
+        self.grp_mod_array = np.zeros((self.nb_links, self.nb_links))
+        for modem in self.state:
+            self.grp_mod_array[modem[0], modem[1]] = 1
 
     def check_modems(self) -> bool:
         """Check if the modems respect the constraints."""
@@ -114,11 +117,11 @@ class SatelliteEnv(Env):
                 np.logical_and(self.state[:, 0] == s[0], self.state[:, 1] == s[1])
             )[0]
             links_in_modem = [self.links[indice] for indice in indices]
-            binary_flow = np.sum([link["binary_rate"] for link in links_in_modem])
+            binary_rate = np.sum([link["binary_rate"] for link in links_in_modem])
             symbol_rate = np.sum([link["symbol_rate"] for link in links_in_modem])
             if (
                 len(indices) > MOD_NB_LINKS
-                or binary_flow > MOD_BIN_RATE
+                or binary_rate > MOD_BIN_RATE
                 or symbol_rate > MOD_SYMB_RATE
             ):
                 return False
@@ -147,10 +150,9 @@ class SatelliteEnv(Env):
     def reset(self) -> np.ndarray:
         """Reset the environment to an initial state."""
         self.state = np.array([(i, i) for i in range(self.nb_links)])
-        self.grp_mod_array = np.zeros((self.nb_links, self.nb_links))
-        self.sum_mod_groups = 2 * self.nb_links
-        for modem in self.state:
-            self.grp_mod_array[modem[0], modem[1]] = 1
+        self.nb_mod = self.nb_links
+        self.nb_grps = self.nb_links
+        self.update_grp_mod_array()
         return self.state
 
     def render(self) -> None:
