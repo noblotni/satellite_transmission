@@ -6,7 +6,6 @@ import numpy as np
 
 def generate_solution_report(state: np.ndarray, links: list, output_path: Path):
     """Generate a JSON report from the optimal state.
-
     Args:
         state (np.ndarray): optimal state returned by the optimization
             algorithm

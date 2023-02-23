@@ -42,6 +42,7 @@ class SatelliteEnv(Env):
         self.nb_grps_min = self.nb_links
         # Fill the group-modem array
         self.update_grp_mod_array()
+        
         self.action_shape = (3,)
         self.action_space = spaces.Box(
             low=np.zeros(self.action_shape),

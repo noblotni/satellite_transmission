@@ -150,3 +150,7 @@ cython_debug/
 
 # Experiments folder
 experiments/
+
+
+# Json files
+*.json

@@ -7,7 +7,7 @@ import json
 NB_INSTANCES = 10
 
 # Links constants
-NB_LINKS = 50
+NB_LINKS = 100
 # Maximal bandwidth (kHz)
 MAX_BANDWIDTH = 20000
 # Minimal bandwidth (kHz)
@@ -46,7 +46,6 @@ def generate_all_instances(nb_instances, folder_path: Path):
 
 
 def main():
-
     folder_path = Path("./instances_" + str(NB_LINKS))
     if not (folder_path.exists()):
         folder_path.mkdir()
