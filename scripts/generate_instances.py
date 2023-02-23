@@ -45,7 +45,6 @@ def generate_all_instances(nb_instances, folder_path: Path):
 
 
 def main():
-
     folder_path = Path("./instances_" + str(NB_LINKS))
     if not (folder_path.exists()):
         folder_path.mkdir()

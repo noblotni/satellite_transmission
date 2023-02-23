@@ -6,6 +6,8 @@ import gym
 import json
 from ppo import PPO
 from environment import SatelliteEnv
+import pandas as pd
+from json_report import generate_solution_report
 
 ################################### Training ###################################
 def train(link_path="scripts/instances_100/instance0.json"):
@@ -20,7 +22,6 @@ def train(link_path="scripts/instances_100/instance0.json"):
     print_freq = max_ep_len  *2        # print avg reward in the interval (in num timesteps)
     log_freq = max_ep_len * 2           # log avg reward in the interval (in num timesteps)
     save_model_freq = int(1000)          # save model frequency (in num timesteps)
-
     #####################################################
 
     ## Note : print/log frequencies should be > than max_ep_len
@@ -223,6 +224,8 @@ def train(link_path="scripts/instances_100/instance0.json"):
     print("Total training time  : ", end_time - start_time)
     print("============================================================================================")
 
+    os.makedirs("output", exist_ok=True)
+    generate_solution_report(state, links, "output/output.json")
 
 if __name__ == '__main__':
     train()
