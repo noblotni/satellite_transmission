@@ -12,7 +12,7 @@ import logging
 from torch.distributions import MultivariateNormal
 from torch.distributions import Categorical
 
-from environment import SatelliteEnv
+from satellite_transmission.environment import SatelliteEnv
 
 
 logging.basicConfig(level=logging.INFO)
@@ -201,10 +201,6 @@ class PPO:
             self.optimizer.zero_grad()
             loss.mean().backward()
             self.optimizer.step()
-            
-        min_nb_modem = np.unique(old_states[-1].numpy()[:,0]).shape[0]
-        min_nb_group = np.unique(old_states[-1].numpy()[:,1]).shape[0]
-        print("min_nb_modem: ", min_nb_modem, "min_nb_group: ", min_nb_group)
 
         # Copy new weights into old policy
         self.policy_old.load_state_dict(self.policy.state_dict())
@@ -219,16 +215,14 @@ class PPO:
         self.policy_old.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
         self.policy.load_state_dict(torch.load(checkpoint_path, map_location=lambda storage, loc: storage))
 
-
-"scripts/instances_100/instance0.json"
 ################################### Training ###################################
-def run_ppo(links, nb_episodes=int(3e4), duration_episodes=1000):
+def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
     print("============================================================================================")
 
     ####### initialize environment hyperparameters ######
     env_name = "SatelliteEnv"
 
-    max_ep_len = duration_episodes       # max timesteps in one episode
+    max_ep_len = duration_episode       # max timesteps in one episode
     max_training_timesteps = nb_episodes # break training loop if timeteps > max_training_timesteps
 
     print_freq = max_ep_len * 2        # print avg reward in the interval (in num timesteps)
@@ -282,7 +276,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episodes=1000):
     print("logging at : " + log_f_name)
     #####################################################
 
-    ################### checkpointing ###################
+    """################### checkpointing ###################
     run_num_pretrained = 0      #### change this to prevent overwriting weights in same env_name folder
 
     directory = "PPO_preTrained"
@@ -296,7 +290,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episodes=1000):
 
     checkpoint_path = directory + "PPO_{}_{}_{}.pth".format(env_name, random_seed, run_num_pretrained)
     print("save checkpoint path : " + checkpoint_path)
-    #####################################################
+    #####################################################"""
 
 
     ############# print all hyperparameters #############
@@ -405,9 +399,11 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episodes=1000):
             # save model weights
             if time_step % save_model_freq == 0:
                 print("--------------------------------------------------------------------------------------------")
-                print("saving model at : " + checkpoint_path)
-                ppo_agent.save(checkpoint_path)
-                print("model saved")
+                print(f"{env.nb_grps_min = }")
+                print(f"{env.nb_mod_min = }")
+                #print("saving model at : " + checkpoint_path)
+                #ppo_agent.save(checkpoint_path)
+                #print("model saved")
                 print("Elapsed Time  : ", datetime.now().replace(microsecond=0) - start_time)
                 print("--------------------------------------------------------------------------------------------")
 
