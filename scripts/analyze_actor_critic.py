@@ -25,7 +25,7 @@ def main(args):
     with open(args.links_path, "r") as file:
         links = json.load(file)
     with Pool(processes=2) as pool:
-        solutions = pool.starmap(solve, [(links, i) for i in range(30)])
+        solutions = pool.starmap(solve, [(links, i) for i in range(10)])
     solutions_df = pd.DataFrame(solutions, columns=["nb_modems", "nb_groups"])
     solutions_df.to_csv("./solutions.csv")
 

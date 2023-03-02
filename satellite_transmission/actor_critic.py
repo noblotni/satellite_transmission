@@ -98,7 +98,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
     actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
     critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
     rewards_list = []
-    for _ in range(nb_episodes):
+    for i in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
         try:
@@ -128,7 +128,9 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                 # Logs
                 if j % 1000 == 0:
                     logging.info(
-                        "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
+                        "Episode: {}, Timestep: {}, Cumulated reward: {}".format(
+                            i + 1, j, cumulated_reward
+                        )
                     )
                     logging.info(
                         "Minimal solution is : {} modems, {} groups".format(
