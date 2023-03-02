@@ -8,7 +8,7 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, verb
     nb_mod_min_list = []
     state_min_list = []
 
-    if algo == "both":
+    if algo == "compare":
         nb_grps_min_list_actor = []
         nb_mod_min_list_actor = []
         state_min_list_actor = []

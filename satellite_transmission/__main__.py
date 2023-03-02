@@ -17,7 +17,7 @@ def main(args):
 
     print(f"Running {args.algo} algorithm...") if args.algo != "compare" else print("Running Actor-Critic and PPO algorithms...")
     print("=========================================")
-    if args.nb_repeat > 1:
+    if args.nb_repeat > 1 or args.algo == "compare":
         print(f"Running {args.nb_repeat} times...")
         state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, args.duration_episode, args.nb_repeat, verbose)
     elif args.nb_repeat == 1:
