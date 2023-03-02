@@ -7,128 +7,41 @@ from satellite_transmission.ppo import run_ppo
 from satellite_transmission.json_report import generate_solution_report
 import numpy as np
 from termcolor import colored
+from batch_comparison import batch_comparison
 
 def main(args):
     with open(args.links_path, "r") as file:
         links = json.load(file)
 
-    nb_grps_min_list = []
-    nb_mod_min_list = []
-    state_min_list = []
-    nb_grps_min_list_actor = []
-    nb_mod_min_list_actor = []
-    state_min_list_actor = []
-    nb_grps_min_list_ppo = []
-    nb_mod_min_list_ppo = []
-    state_min_list_ppo = []
-    best_ppo = 0
-    best_actor = 0
     verbose = 0 if args.nb_repeat > 1 else 1
 
     print(f"Running {args.algo} algorithm...") if args.algo != "compare" else print("Running Actor-Critic and PPO algorithms...")
     print("=========================================")
-    for i in range(args.nb_repeat):
-        if args.nb_repeat > 1:
-            print(f"Repeat {i+1}/{args.nb_repeat}...")
-        if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min = run_actor_critic(
-                links, nb_episodes=args.nb_episodes, duration_episode=args.duration_episode, verbose=verbose
-            )
-            state_min_list.append(state_min)
-            nb_grps_min_list.append(nb_grps_min)
-            nb_mod_min_list.append(nb_mod_min)
-
+    if args.nb_repeat > 1:
+        print(f"Running {args.nb_repeat} times...")
+        state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, args.duration_episode, args.nb_repeat, verbose)
+    elif args.nb_repeat == 1:
+        if args.algo == "actor_critic":
+            state_min, nb_grps_min, nb_mod_min = run_actor_critic(links, args.nb_episodes, args.duration_episode, verbose)
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min = run_ppo(
-                links, nb_episodes=args.nb_episodes, duration_episode=args.duration_episode, verbose=verbose
-            )
-            state_min_list.append(state_min)
-            nb_grps_min_list.append(nb_grps_min)
-            nb_mod_min_list.append(nb_mod_min)
-
-        elif args.algo == "compare":
-            print('Actor-Critic...')
-            state_min_actor, nb_grps_min_actor, nb_mod_min_actor = run_actor_critic(
-                links, nb_episodes=args.nb_episodes, duration_episode=1000, verbose=verbose
-            )
-            print('PPO...')
-            state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo = run_ppo(
-                links, nb_episodes=args.nb_episodes, duration_episode=13000, verbose=verbose
-            )
-            nb_grps_min_list_actor.append(nb_grps_min_actor)
-            nb_mod_min_list_actor.append(nb_mod_min_actor)
-            state_min_list_actor.append(state_min_actor)
-
-            nb_grps_min_list_ppo.append(nb_grps_min_ppo)
-            nb_mod_min_list_ppo.append(nb_mod_min_ppo)
-            state_min_list_ppo.append(state_min_ppo)
-
-            if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
-                best_ppo += 1
-            else:
-                best_actor += 1
-    
-    print("=========================================")
-    print("RESULTS")
-    print("=========================================")
-    if args.algo == "compare":
-        print(colored("COMPARISON BETWEEN PPO AND ACTOR-CRITIC","blue"))
-        print("=========================================")
-        if best_ppo > best_actor:
-            print(colored("PPO","green"),"is better most of the times", colored(f"{best_ppo = }","green"), colored(f"{best_actor = }","red"))
+            state_min, nb_grps_min, nb_mod_min = run_ppo(links, args.nb_episodes, args.duration_episode, verbose)
         else:
-            print(colored("Actor-Critic","green"),"is better most of the times", colored(f"{best_actor = }","green"), colored(f"{best_ppo = }","red"))
-        
-        nb_grps_min_list_ppo = np.array(nb_grps_min_list_ppo)
-        nb_mod_min_list_ppo = np.array(nb_mod_min_list_ppo)
-        nb_grps_min_list_actor = np.array(nb_grps_min_list_actor)
-        nb_mod_min_list_actor = np.array(nb_mod_min_list_actor)
-
-        best_ppo_index = np.argmin(nb_grps_min_list_ppo + nb_mod_min_list_ppo)
-        state_min_ppo = state_min_list_ppo[best_ppo_index]
-        nb_grps_min_ppo = nb_grps_min_list_ppo[best_ppo_index]
-        nb_mod_min_ppo = nb_mod_min_list_ppo[best_ppo_index]
-
-        best_actor_index = np.argmin(nb_grps_min_list_actor + nb_mod_min_list_actor)
-        state_min_actor = state_min_list_actor[best_actor_index]
-        nb_grps_min_actor = nb_grps_min_list_actor[best_actor_index]
-        nb_mod_min_actor = nb_mod_min_list_actor[best_actor_index]
-
-        print(colored("Best PPO solution:", "blue"))
-        print(f"nb_grps_min_ppo={colored(nb_grps_min_ppo, 'yellow')}")
-        print(f"nb_mod_min_ppo={colored(nb_mod_min_ppo, 'yellow')}")
-
-        print(colored("Best Actor-Critic solution:", "blue"))
-        print(f"nb_grps_min_actor={colored(nb_grps_min_actor, 'yellow')}")
-        print(f"nb_mod_min_actor={colored(nb_mod_min_actor, 'yellow')}")
-
+            raise ValueError("Unknown algorithm.")
         print("=========================================")
-        if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
-            print(colored("PPO","green"), "found the best solution")
-            state_min = state_min_ppo
-            nb_grps_min = nb_grps_min_ppo
-            nb_mod_min = nb_mod_min_ppo
-        else:
-            print(colored("Actor-Critic","green"), "found the best solution")
-            state_min = state_min_actor
-            nb_grps_min = nb_grps_min_actor
-            nb_mod_min = nb_mod_min_actor
+        print("RESULTS")
+        print("=========================================")
     else:
-        best_index = np.argmin(nb_grps_min_list + nb_grps_min_list)
-        state_min = state_min_list[best_index]
-        nb_grps_min = nb_grps_min_list[best_index]
-        nb_mod_min = nb_mod_min_list[best_index]
-
+        raise ValueError("nb_repeat must be positive.")
     print(colored("Best solution:","blue"))
     print(f"nb_grps_min={colored(nb_grps_min, 'yellow')}")
     print(f"nb_mod_min={colored(nb_mod_min, 'yellow')}")
 
     print("=========================================")
     print("Saving the solution...")
+
     generate_solution_report(
         state=state_min, links=links, output_path=args.output_path
     )
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Run the optimization algorithm.")
