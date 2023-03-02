@@ -75,7 +75,7 @@ def sample_action(actor: ActorNetwork, env: SatelliteEnv):
     return action, action_clipped, norm_dist
 
 
-def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
+def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, verbose: int = 0):
     """Run the actor-critic algorithm to solve the optimization problem.
 
     Args:
@@ -126,7 +126,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
                 critic_optimizer.step()
                 rewards_list.append(cumulated_reward)
                 # Logs
-                if j % 1000 == 0:
+                if j % 1000 == 0 and verbose == 1:
                     logging.info(
                         "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
                     )
