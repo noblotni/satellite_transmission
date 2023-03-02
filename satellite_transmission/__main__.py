@@ -7,7 +7,7 @@ from satellite_transmission.ppo import run_ppo
 from satellite_transmission.json_report import generate_solution_report
 import numpy as np
 from termcolor import colored
-from batch_comparison import batch_comparison
+from satellite_transmission.batch_comparison import batch_comparison
 
 def main(args):
     with open(args.links_path, "r") as file:
