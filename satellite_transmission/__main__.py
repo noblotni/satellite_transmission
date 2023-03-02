@@ -28,7 +28,8 @@ def main(args):
     print(f"Running {args.algo} algorithm...") if args.algo != "compare" else print("Running Actor-Critic and PPO algorithms...")
     print("=========================================")
     for i in range(args.nb_repeat):
-        print(f"Repeat {i+1}/{args.nb_repeat}...")
+        if args.nb_repeat > 1:
+            print(f"Repeat {i+1}/{args.nb_repeat}...")
         if args.algo == "actor-critic":
             state_min, nb_grps_min, nb_mod_min = run_actor_critic(
                 links, nb_episodes=args.nb_episodes, duration_episode=args.duration_episode, verbose=verbose
@@ -48,11 +49,11 @@ def main(args):
         elif args.algo == "compare":
             print('Actor-Critic...')
             state_min_actor, nb_grps_min_actor, nb_mod_min_actor = run_actor_critic(
-                links, nb_episodes=args.nb_episodes, duration_episode=args.duration_episode, verbose=verbose
+                links, nb_episodes=args.nb_episodes, duration_episode=1000, verbose=verbose
             )
             print('PPO...')
             state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo = run_ppo(
-                links, nb_episodes=args.nb_episodes, duration_episode=args.duration_episode, verbose=verbose
+                links, nb_episodes=args.nb_episodes, duration_episode=13000, verbose=verbose
             )
             nb_grps_min_list_actor.append(nb_grps_min_actor)
             nb_mod_min_list_actor.append(nb_mod_min_actor)
