@@ -9,8 +9,8 @@ packages = [{include = "satellite_transmission"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-gym = "^0.26.2"
 torch = "1.13.0"
+gymnasium = "^0.27.1"
 
 
 [build-system]
