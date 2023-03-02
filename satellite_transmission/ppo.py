@@ -5,7 +5,7 @@ from datetime import datetime
 import torch
 import torch.nn as nn
 import logging
-from satellite_transmission.environment import SatelliteEnv
+from satellite_transmission.environment import SquareSatelliteEnv
 
 
 logging.basicConfig(level=logging.INFO)
@@ -289,7 +289,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
     #####################################################
 
     print("training environment name : " + env_name)
-    env = SatelliteEnv(links)
+    env = SquareSatelliteEnv(links)
 
     # state space dimension
     state_dim = env.observation_space.shape[0]

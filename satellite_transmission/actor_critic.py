@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from satellite_transmission.environment import SatelliteEnv
+from satellite_transmission.environment import SquareSatelliteEnv, RectangleSatelliteEnv
 import satellite_transmission.config as config
 import logging
 
@@ -62,17 +62,29 @@ class CriticNetwork(nn.Module):
         return x
 
 
-def sample_action(actor: ActorNetwork, env: SatelliteEnv):
+def sample_action(actor: ActorNetwork, env: SquareSatelliteEnv):
+
     # Scale state
-    state = 1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
+    state = torch.Tensor(env.state)
+    state = scale_state(env, state)
+    # Predict action
     action, norm_dist = actor(state)
     # Clip the action so that the values are in the action space
     action_clipped = torch.clip(
-        (env.nb_links - 1) * action,
-        min=torch.zeros(3, dtype=torch.int),
-        max=torch.Tensor([env.nb_links - 1, env.nb_links - 1, env.nb_links - 1]),
+        torch.mul(torch.Tensor(env.high_action), action),
+        min=torch.zeros(env.action_shape),
+        max=torch.Tensor(env.high_action),
     )
     return action, action_clipped, norm_dist
+
+
+def scale_state(env: SquareSatelliteEnv, state: torch.Tensor):
+    high_state = torch.Tensor(env.high_obs)
+    norm_tensor = torch.zeros_like(state)
+    norm_tensor[:, 0] = 1 / high_state[0] * torch.ones(norm_tensor.shape[0])
+    norm_tensor[:, 1] = 1 / high_state[1] * torch.ones(norm_tensor.shape[0])
+    scaled_state = torch.flatten(torch.mul(norm_tensor, state))
+    return scaled_state
 
 
 def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
@@ -89,7 +101,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
         nb_grps_min (int): the number of groups in the minimal group
     """
 
-    env = SatelliteEnv(links)
+    env = RectangleSatelliteEnv(links, 2)
     actor = ActorNetwork(obs_size=2 * len(links), action_size=3)
     critic = CriticNetwork(obs_size=2 * len(links))
     # Initiliaze loss
@@ -103,9 +115,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int):
         cumulated_reward = 0
         try:
             for j in range(duration_episode):
-                value_state = critic(
-                    1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
-                )
+                value_state = critic(scale_state(env, torch.Tensor(env.state)))
                 action, action_clipped, norm_dist = sample_action(actor=actor, env=env)
                 # Observe action and reward
                 next_state, reward, _, _ = env.step(action_clipped.numpy().astype(int))
