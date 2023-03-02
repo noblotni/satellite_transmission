@@ -124,9 +124,7 @@ class ActorCritic(nn.Module):
 
 
 class PPO:
-    def __init__(
-        self, state_dim, action_dim
-    ):
+    def __init__(self, state_dim, action_dim):
         self.gamma = GAMMA
         self.eps_clip = EPS_CLIP
         self.K_epochs = K_EPOCHS
@@ -244,7 +242,18 @@ class PPO:
         )
 
 
-def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int, report: bool, filename: str, batch: bool):
+def run_ppo(
+    links: list,
+    nb_episodes: int,
+    duration_episode: int,
+    print_freq: int,
+    log_freq: int,
+    timeout: int,
+    verbose: int,
+    report: bool,
+    filename: str,
+    batch: bool,
+):
     ### report variables ####
     if report:
         reward_per_time_step = []
@@ -254,7 +263,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
         timesteps = []
 
     ### initialize environment hyperparameters ######
-    if verbose==2:
+    if verbose == 2:
         print(
             "============================================================================================"
         )
@@ -276,10 +285,12 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
     max_ep_len = duration_episode  # max timesteps in one episode
     update_timestep = max_ep_len * 4  # update policy every n timesteps
 
-    max_training_timesteps = nb_episodes  # break training loop if timeteps > max_training_timesteps
+    max_training_timesteps = (
+        nb_episodes  # break training loop if timeteps > max_training_timesteps
+    )
 
     #####################################################
-    if verbose==2:
+    if verbose == 2:
         ("training environment name : " + env_name)
     env = SatelliteEnv(links)
 
@@ -289,7 +300,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
     action_dim = env.action_space.shape[0]
 
     ###################### report ######################
-    if report:   
+    if report:
         results_dir = "satellite_rl/output/PPO_Results"
         os.makedirs(results_dir, exist_ok=True)
 
@@ -302,7 +313,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
         else:
             results_dir = results_dir + filename.split("-")[0] + "/"
             os.makedirs(results_dir, exist_ok=True)
-            
+
             results_dir = results_dir + filename.split("-")[1] + "/"
             os.makedirs(results_dir, exist_ok=True)
     #####################################################
@@ -318,13 +329,13 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
     #### create new log file for each run
     log_f_name = log_dir + "PPO_" + env_name + "_log_" + filename + ".csv"
 
-    if verbose==2:
+    if verbose == 2:
         print("current logging run number for " + env_name + " : ", filename)
         print("logging at : " + log_f_name)
     #####################################################
 
     ############# print all hyperparameters #############
-    if verbose==2:
+    if verbose == 2:
         print(
             "--------------------------------------------------------------------------------------------"
         )
@@ -360,7 +371,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
         print("optimizer learning rate critic : ", LR_CRITIC)
 
     if RANDOM_SEED:
-        if verbose==2:
+        if verbose == 2:
             print(
                 "--------------------------------------------------------------------------------------------"
             )
@@ -378,13 +389,11 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
     ################# training procedure ################
 
     # initialize a PPO agent
-    ppo_agent = PPO(
-        state_dim, action_dim
-    )
+    ppo_agent = PPO(state_dim, action_dim)
 
     # track total training time
     start_time = datetime.now().replace(microsecond=0)
-    if verbose==2:
+    if verbose == 2:
         print("Started training at (GMT) : ", start_time)
 
         print(
@@ -424,7 +433,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
             # update PPO agent
             if t % update_timestep == 0:
                 ppo_agent.update()
-            
+
             print_running_reward += current_ep_reward
             print_running_episodes += 1
 
@@ -450,23 +459,32 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                 print_avg_reward = print_running_reward / print_running_episodes
                 print_avg_reward = round(print_avg_reward, 2)
 
-                if verbose==2:
+                if verbose == 2:
                     print(
                         "--------------------------------------------------------------------------------------------"
                     )
                     print(
                         "Episode : {} \t\t Timestep : {} \t\t Elapsed time: {}s".format(
-                            colored(i_episode,"blue"), colored(t,"blue"), colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue")
+                            colored(i_episode, "blue"),
+                            colored(t, "blue"),
+                            colored(
+                                (
+                                    datetime.now().replace(microsecond=0) - start_time
+                                ).seconds,
+                                "blue",
+                            ),
                         )
                     )
                     print(
                         "Cumulated reward: {}, Average reward: {}".format(
-                                                                         colored(round(print_running_reward,2),"green"),
-                                                                         colored(round(print_avg_reward,2),"green")
-                                                                        )
+                            colored(round(print_running_reward, 2), "green"),
+                            colored(round(print_avg_reward, 2), "green"),
+                        )
                     )
-                    print("Minimal solution is : {} modems, {} groups".format(
-                            colored(env.nb_mod_min,"yellow"), colored(env.nb_grps_min,"yellow")
+                    print(
+                        "Minimal solution is : {} modems, {} groups".format(
+                            colored(env.nb_mod_min, "yellow"),
+                            colored(env.nb_grps_min, "yellow"),
                         )
                     )
                     print(
@@ -474,23 +492,33 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                     )
                 elif verbose == 1:
                     logging.info(
-                        "Episode: {}, Timestep: {}, Elapsed time: {}s".format(colored(i_episode,"blue"), colored(t,"blue"),colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue"))
+                        "Episode: {}, Timestep: {}, Elapsed time: {}s".format(
+                            colored(i_episode, "blue"),
+                            colored(t, "blue"),
+                            colored(
+                                (
+                                    datetime.now().replace(microsecond=0) - start_time
+                                ).seconds,
+                                "blue",
+                            ),
+                        )
                     )
                     logging.info(
                         "Cumulated reward: {}, Average reward: {}".format(
-                                                                         colored(round(print_running_reward,2),"green"),
-                                                                         colored(round(print_avg_reward,2),"green")
-                                                                        )
+                            colored(round(print_running_reward, 2), "green"),
+                            colored(round(print_avg_reward, 2), "green"),
+                        )
                     )
                     logging.info(
                         "Minimal solution is : {} modems, {} groups\n".format(
-                            colored(env.nb_mod_min,"yellow"), colored(env.nb_grps_min,"yellow")
+                            colored(env.nb_mod_min, "yellow"),
+                            colored(env.nb_grps_min, "yellow"),
                         )
                     )
 
                 print_running_reward = 0
                 print_running_episodes = 0
-            
+
             elapsed_time = datetime.now().replace(microsecond=0) - start_time
             if report:
                 reward_per_time_step.append(current_ep_reward)
@@ -502,21 +530,25 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
             # break; if the episode is over
             if done or (elapsed_time.seconds > timeout and timeout != 0):
                 break
-        
+
         if elapsed_time.seconds > timeout and timeout != 0:
-            if verbose==2:
-                print("============================================================================================")
+            if verbose == 2:
+                print(
+                    "============================================================================================"
+                )
                 print("TIMEOUT REACHED")
-                print("============================================================================================")
-            elif verbose==1:
+                print(
+                    "============================================================================================"
+                )
+            elif verbose == 1:
                 logging.info("Timeout reached, stopping the algorithm")
             break
-        
-        i_episode+=1
+
+        i_episode += 1
     log_f.close()
     env.close()
 
-    if verbose==2:
+    if verbose == 2:
         # print total training time
         print(
             "============================================================================================"
@@ -539,7 +571,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                 "nb_group_min": nb_group_min_time_step,
             }
         )
-        df_time_step.to_csv(results_dir+"time_step_report.csv", index=False)
+        df_time_step.to_csv(results_dir + "time_step_report.csv", index=False)
     else:
         results_dir = None
     return env.state_min, env.nb_grps_min, env.nb_mod_min, results_dir

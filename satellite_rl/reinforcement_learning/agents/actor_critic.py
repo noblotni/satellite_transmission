@@ -41,14 +41,17 @@ class ActorNetwork(nn.Module):
             nn.Linear(HIDDEN_SIZE, action_size), nn.Softplus()
         )
 
-    def forward(self, x: torch.Tensor) -> tuple[
-        torch.Tensor, torch.distributions.MultivariateNormal]:
+    def forward(
+        self, x: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.distributions.MultivariateNormal]:
         x = self.fc1_layer(x)
         x = self.fc2_layer(x)
         mu: torch.Tensor = self.mu_out_layer(x)
         sigma_diag: torch.Tensor = self.sigma_out_layer(x)
-        norm_dist: torch.distributions.MultivariateNormal = torch.distributions.MultivariateNormal(
-            loc=mu, covariance_matrix=torch.diag(sigma_diag)
+        norm_dist: torch.distributions.MultivariateNormal = (
+            torch.distributions.MultivariateNormal(
+                loc=mu, covariance_matrix=torch.diag(sigma_diag)
+            )
         )
         x = norm_dist.sample()
         return x.detach(), norm_dist
@@ -72,24 +75,45 @@ class CriticNetwork(nn.Module):
         return x
 
 
-def sample_action(actor: ActorNetwork, env: SatelliteEnv) -> tuple[
-    torch.Tensor, torch.Tensor, torch.distributions.MultivariateNormal
-]:
+def sample_action(
+    actor: ActorNetwork, env: SquareSatelliteEnv
+) -> tuple[torch.Tensor, torch.Tensor, torch.distributions.MultivariateNormal]:
+
     # Scale state
-    state: float = 1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
+    state = torch.Tensor(env.state)
+    state = scale_state(env, state)
+    # Predict action
     action, norm_dist = actor(state)
     # Clip the action so that the values are in the action space
-    action_clipped: torch.Tensor = torch.clip(
-        (env.nb_links - 1) * action,
-        min=torch.zeros(3, dtype=torch.int),
-        max=torch.Tensor([env.nb_links - 1, env.nb_links - 1, env.nb_links - 1]),
+    action_clipped = torch.clip(
+        torch.mul(torch.Tensor(env.high_action), action),
+        min=torch.zeros(env.action_shape),
+        max=torch.Tensor(env.high_action),
     )
     return action, action_clipped, norm_dist
 
 
-def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
-                     print_freq: int, log_freq: int, timeout: int, verbose: int, 
-                     report: bool, filename: str, batch: bool):
+def scale_state(env: SquareSatelliteEnv, state: torch.Tensor):
+    high_state = torch.Tensor(env.high_obs)
+    norm_tensor = torch.zeros_like(state)
+    norm_tensor[:, 0] = 1 / high_state[0] * torch.ones(norm_tensor.shape[0])
+    norm_tensor[:, 1] = 1 / high_state[1] * torch.ones(norm_tensor.shape[0])
+    scaled_state = torch.flatten(torch.mul(norm_tensor, state))
+    return scaled_state
+
+
+def run_actor_critic(
+    links: list,
+    nb_episodes: int,
+    duration_episode: int,
+    print_freq: int,
+    log_freq: int,
+    timeout: int,
+    verbose: int,
+    report: bool,
+    filename: str,
+    batch: bool,
+):
     """Run the actor-critic algorithm to solve the optimization problem.
 
     Args:
@@ -140,7 +164,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
         else:
             results_dir = results_dir + filename.split("-")[0] + "/"
             os.makedirs(results_dir, exist_ok=True)
-            
+
             results_dir = results_dir + filename.split("-")[1] + "/"
             os.makedirs(results_dir, exist_ok=True)
     #####################################################
@@ -160,7 +184,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
     log_f = open(log_f_name, "w+")
     log_f.write("episode,timestep,reward\n")
 
-    if verbose==2:
+    if verbose == 2:
         print("current logging run number for " + env_name + " : ", filename)
 
         print("logging at : " + log_f_name)
@@ -240,19 +264,20 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
         try:
             for j in range(duration_episode):
                 value_state: torch.Tensor = critic(
-                    1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
+                    scale_state(env=env, state=torch.Tensor(env.state))
                 )
                 action, action_clipped, norm_dist = sample_action(actor=actor, env=env)
                 # Observe action and reward
                 next_state, reward, _, _ = env.step(action_clipped.numpy().astype(int))
                 cumulated_reward += reward
                 value_next_state: torch.Tensor = critic(
-                    torch.Tensor(next_state.flatten()))
+                    scale_state(env=env, state=torch.Tensor(next_state))
+                )
                 target: float = reward + GAMMA * value_next_state.detach()
                 # Calculate losses
                 critic_loss: torch.Tensor = critic_loss_fn(value_state, target)
                 actor_loss: torch.Tensor = (
-                        -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
+                    -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
                 )
                 # Perform backpropagation
                 actor_optimizer.zero_grad()
@@ -268,19 +293,21 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
                     if verbose == 1:
                         logging.info(
                             "Episode: {}, Timestep: {}, Elapsed time: {}s".format(
-                                colored(i_ep, "blue"), colored(j, "blue"),
-                                colored(elapsed_time.seconds, "blue"))
+                                colored(i_ep, "blue"),
+                                colored(j, "blue"),
+                                colored(elapsed_time.seconds, "blue"),
+                            )
                         )
                         logging.info(
                             "Cumulated reward: {}, Average reward: {}".format(
                                 colored(round(cumulated_reward, 2), "green"),
-                                colored(round(np.mean(rewards_list), 2), "green")
+                                colored(round(np.mean(rewards_list), 2), "green"),
                             )
                         )
                         logging.info(
                             "Minimal solution is : {} modems, {} groups\n".format(
                                 colored(env.nb_mod_min, "yellow"),
-                                colored(env.nb_grps_min, "yellow")
+                                colored(env.nb_grps_min, "yellow"),
                             )
                         )
                     elif verbose == 2:
@@ -289,20 +316,22 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
                         )
                         print(
                             "Episode : {} \t\t Timestep : {} \t\t Elapsed time: {}s".format(
-                                colored(i_ep, "blue"), colored(j, "blue"),
-                                colored(elapsed_time.seconds, "blue")
+                                colored(i_ep, "blue"),
+                                colored(j, "blue"),
+                                colored(elapsed_time.seconds, "blue"),
                             )
                         )
                         print(
                             "Cumulated reward: {}, Average reward: {}".format(
                                 colored(round(cumulated_reward, 2), "green"),
-                                colored(round(np.mean(rewards_list), 2), "green")
+                                colored(round(np.mean(rewards_list), 2), "green"),
                             )
                         )
-                        print("Minimal solution is : {} modems, {} groups".format(
-                            colored(env.nb_mod_min, "yellow"),
-                            colored(env.nb_grps_min, "yellow")
-                        )
+                        print(
+                            "Minimal solution is : {} modems, {} groups".format(
+                                colored(env.nb_mod_min, "yellow"),
+                                colored(env.nb_grps_min, "yellow"),
+                            )
                         )
                         print(
                             "--------------------------------------------------------------------------------------------"
@@ -319,8 +348,11 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
                     episodes.append(i_ep)
                     timesteps.append(j)
 
-                if timeout != 0 and (datetime.now().replace(
-                        microsecond=0) - start_time).seconds > timeout:
+                if (
+                    timeout != 0
+                    and (datetime.now().replace(microsecond=0) - start_time).seconds
+                    > timeout
+                ):
                     if verbose == 1:
                         logging.info("Timeout reached, stopping the algorithm")
                     elif verbose == 2:
@@ -336,10 +368,12 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
                             "============================================================================================"
                         )
                         print(
-                            "============================================================================================")
+                            "============================================================================================"
+                        )
                         print("TIMEOUT REACHED")
                         print(
-                            "============================================================================================")
+                            "============================================================================================"
+                        )
                     log_f.close()
                     if report:
                         df_time_step = pd.DataFrame(
@@ -351,8 +385,9 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
                                 "nb_group_min": nb_group_min_time_step,
                             }
                         )
-                        df_time_step.to_csv(results_dir + "time_step_report.csv",
-                                            index=False)
+                        df_time_step.to_csv(
+                            results_dir + "time_step_report.csv", index=False
+                        )
                     else:
                         results_dir = None
                     return env.state_min, env.nb_mod_min, env.nb_grps_min, results_dir
