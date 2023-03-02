@@ -243,22 +243,23 @@ class PPO:
 
 
 ################################### Training ###################################
-def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
+def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
 
-    print(
-        "============================================================================================"
-    )
-    if torch.cuda.is_available():
-        print("Device set to : " + str(torch.cuda.get_device_name(device)))
-    else:
-        print("Device set: cpu")
-    print(
-        "============================================================================================"
-    )
+    if verbose==1:
+        print(
+            "============================================================================================"
+        )
+        if torch.cuda.is_available():
+            print("Device set to : " + str(torch.cuda.get_device_name(device)))
+        else:
+            print("Device set: cpu")
+        print(
+            "============================================================================================"
+        )
 
-    print(
-        "============================================================================================"
-    )
+        print(
+            "============================================================================================"
+        )
 
     ####### initialize environment hyperparameters ######
     env_name = "SatelliteEnv"
@@ -288,7 +289,8 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
     random_seed = 0  # set random seed if required (0 = no random seed)
     #####################################################
 
-    print("training environment name : " + env_name)
+    if verbose==1:
+        ("training environment name : " + env_name)
     env = SatelliteEnv(links)
 
     # state space dimension
@@ -315,8 +317,9 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
     #### create new log file for each run
     log_f_name = log_dir + "/PPO_" + env_name + "_log_" + str(run_num) + ".csv"
 
-    print("current logging run number for " + env_name + " : ", run_num)
-    print("logging at : " + log_f_name)
+    if verbose==1:
+        print("current logging run number for " + env_name + " : ", run_num)
+        print("logging at : " + log_f_name)
     #####################################################
 
     """################### checkpointing ###################
@@ -336,52 +339,54 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
     #####################################################"""
 
     ############# print all hyperparameters #############
-    print(
-        "--------------------------------------------------------------------------------------------"
-    )
-    print("max training timesteps : ", max_training_timesteps)
-    print("max timesteps per episode : ", max_ep_len)
-    print("model saving frequency : " + str(save_model_freq) + " timesteps")
-    print("log frequency : " + str(log_freq) + " timesteps")
-    print(
-        "printing average reward over episodes in last : "
-        + str(print_freq)
-        + " timesteps"
-    )
-    print(
-        "--------------------------------------------------------------------------------------------"
-    )
-    print("state space dimension : ", state_dim)
-    print("action space dimension : ", action_dim)
-    print(
-        "--------------------------------------------------------------------------------------------"
-    )
-    print("Initializing a discrete action space policy")
-    print(
-        "--------------------------------------------------------------------------------------------"
-    )
-    print("PPO update frequency : " + str(update_timestep) + " timesteps")
-    print("PPO K epochs : ", K_epochs)
-    print("PPO epsilon clip : ", eps_clip)
-    print("discount factor (gamma) : ", gamma)
-    print(
-        "--------------------------------------------------------------------------------------------"
-    )
-    print("optimizer learning rate actor : ", lr_actor)
-    print("optimizer learning rate critic : ", lr_critic)
-    if random_seed:
+    if verbose==1:
         print(
             "--------------------------------------------------------------------------------------------"
         )
-        print("setting random seed to ", random_seed)
+        print("max training timesteps : ", max_training_timesteps)
+        print("max timesteps per episode : ", max_ep_len)
+        print("model saving frequency : " + str(save_model_freq) + " timesteps")
+        print("log frequency : " + str(log_freq) + " timesteps")
+        print(
+            "printing average reward over episodes in last : "
+            + str(print_freq)
+            + " timesteps"
+        )
+        print(
+            "--------------------------------------------------------------------------------------------"
+        )
+        print("state space dimension : ", state_dim)
+        print("action space dimension : ", action_dim)
+        print(
+            "--------------------------------------------------------------------------------------------"
+        )
+        print("Initializing a discrete action space policy")
+        print(
+            "--------------------------------------------------------------------------------------------"
+        )
+        print("PPO update frequency : " + str(update_timestep) + " timesteps")
+        print("PPO K epochs : ", K_epochs)
+        print("PPO epsilon clip : ", eps_clip)
+        print("discount factor (gamma) : ", gamma)
+        print(
+            "--------------------------------------------------------------------------------------------"
+        )
+        print("optimizer learning rate actor : ", lr_actor)
+        print("optimizer learning rate critic : ", lr_critic)
+    if random_seed:
+        if verbose==1:
+            print(
+                "--------------------------------------------------------------------------------------------"
+            )
+            print("setting random seed to ", random_seed)
         torch.manual_seed(random_seed)
         env.seed(random_seed)
         np.random.seed(random_seed)
     #####################################################
-
-    print(
-        "============================================================================================"
-    )
+    if verbose == 1:
+        print(
+            "============================================================================================"
+        )
 
     ################# training procedure ################
 
@@ -392,11 +397,12 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
 
     # track total training time
     start_time = datetime.now().replace(microsecond=0)
-    print("Started training at (GMT) : ", start_time)
+    if verbose==1:
+        print("Started training at (GMT) : ", start_time)
 
-    print(
-        "============================================================================================"
-    )
+        print(
+            "============================================================================================"
+        )
 
     # logging file
     log_f = open(log_f_name, "w+")
@@ -455,17 +461,18 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
                 print_avg_reward = print_running_reward / print_running_episodes
                 print_avg_reward = round(print_avg_reward, 2)
 
-                print(
-                    "Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(
-                        i_episode, time_step, print_avg_reward
+                if verbose==1:
+                    print(
+                        "Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(
+                            i_episode, time_step, print_avg_reward
+                        )
                     )
-                )
 
                 print_running_reward = 0
                 print_running_episodes = 0
 
             # save model weights
-            if time_step % save_model_freq == 0:
+            if time_step % save_model_freq == 0 and verbose==1:
                 print(
                     "--------------------------------------------------------------------------------------------"
                 )
@@ -497,16 +504,17 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000):
     log_f.close()
     env.close()
 
-    # print total training time
-    print(
-        "============================================================================================"
-    )
-    end_time = datetime.now().replace(microsecond=0)
-    print("Started training at (GMT) : ", start_time)
-    print("Finished training at (GMT) : ", end_time)
-    print("Total training time  : ", end_time - start_time)
-    print(
-        "============================================================================================"
-    )
+    if verbose==1:
+        # print total training time
+        print(
+            "============================================================================================"
+        )
+        end_time = datetime.now().replace(microsecond=0)
+        print("Started training at (GMT) : ", start_time)
+        print("Finished training at (GMT) : ", end_time)
+        print("Total training time  : ", end_time - start_time)
+        print(
+            "============================================================================================"
+        )
 
     return env.state_min, env.nb_grps_min, env.nb_mod_min
