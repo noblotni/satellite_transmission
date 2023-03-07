@@ -1,43 +1,47 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
+import logging
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from app.reinforcement_learning.environment import SatelliteEnv
+
 import config
-import logging
+from app.reinforcement_learning.environment import SatelliteEnv
 
 logging.basicConfig(level=logging.INFO)
 # Set the number of threads for Pytorch
 torch.set_num_threads(config.TORCH_NB_THREADS)
 
 # NN layers
-HIDDEN_SIZE = 128
+HIDDEN_SIZE: int = 128
 # Discount factor
-GAMMA = 0.99
+GAMMA: float = 0.99
 # Learning rates
-LR_ACTOR = 0.00001
-LR_CRITIC = 0.0001
+LR_ACTOR: float = 0.00001
+LR_CRITIC: float = 0.0001
 
 
 class ActorNetwork(nn.Module):
-    def __init__(self, obs_size, action_size):
+    def __init__(self, obs_size: int, action_size: int) -> None:
         """Map a state to an action."""
         super().__init__()
-        self.fc1_layer = nn.Linear(obs_size, HIDDEN_SIZE)
-        self.fc2_layer = nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE)
-        self.mu_out_layer = nn.Sequential(
+        self.fc1_layer: nn.Linear = nn.Linear(obs_size, HIDDEN_SIZE)
+        self.fc2_layer: nn.Linear = nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE)
+        self.mu_out_layer: nn.Sequential = nn.Sequential(
             nn.Linear(HIDDEN_SIZE, action_size), nn.Sigmoid()
         )
-        self.sigma_out_layer = nn.Sequential(
+        self.sigma_out_layer: nn.Sequential = nn.Sequential(
             nn.Linear(HIDDEN_SIZE, action_size), nn.Softplus()
         )
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> tuple[
+        torch.Tensor, torch.distributions.MultivariateNormal]:
         x = self.fc1_layer(x)
         x = self.fc2_layer(x)
-        mu = self.mu_out_layer(x)
-        sigma_diag = self.sigma_out_layer(x)
-        norm_dist = torch.distributions.MultivariateNormal(
+        mu: torch.Tensor = self.mu_out_layer(x)
+        sigma_diag: torch.Tensor = self.sigma_out_layer(x)
+        norm_dist: torch.distributions.MultivariateNormal = torch.distributions.MultivariateNormal(
             loc=mu, covariance_matrix=torch.diag(sigma_diag)
         )
         x = norm_dist.sample()
@@ -45,15 +49,15 @@ class ActorNetwork(nn.Module):
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, obs_size):
+    def __init__(self, obs_size: int) -> None:
         """Map a state to a quality-value."""
         super().__init__()
-        self.fc1_layer = nn.Linear(obs_size, HIDDEN_SIZE)
-        self.fc2_layer = nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE)
-        self.critic_out_layer = nn.Linear(HIDDEN_SIZE, 1)
-        self.sigmoid = nn.Sigmoid()
+        self.fc1_layer: nn.Linear = nn.Linear(obs_size, HIDDEN_SIZE)
+        self.fc2_layer: nn.Linear = nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE)
+        self.critic_out_layer: nn.Linear = nn.Linear(HIDDEN_SIZE, 1)
+        self.sigmoid: nn.Sigmoid = nn.Sigmoid()
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.fc1_layer(x)
         x = self.sigmoid(x)
         x = self.fc2_layer(x)
@@ -62,12 +66,14 @@ class CriticNetwork(nn.Module):
         return x
 
 
-def sample_action(actor: ActorNetwork, env: SatelliteEnv):
+def sample_action(actor: ActorNetwork, env: SatelliteEnv) -> tuple[
+    torch.Tensor, torch.Tensor, torch.distributions.MultivariateNormal
+]:
     # Scale state
-    state = 1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
+    state: float = 1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
     action, norm_dist = actor(state)
     # Clip the action so that the values are in the action space
-    action_clipped = torch.clip(
+    action_clipped: torch.Tensor = torch.clip(
         (env.nb_links - 1) * action,
         min=torch.zeros(3, dtype=torch.int),
         max=torch.Tensor([env.nb_links - 1, env.nb_links - 1, env.nb_links - 1]),
@@ -75,7 +81,8 @@ def sample_action(actor: ActorNetwork, env: SatelliteEnv):
     return action, action_clipped, norm_dist
 
 
-def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, verbose: int = 0):
+def run_actor_critic(links: list[dict], nb_episodes: int, duration_episode: int,
+                     verbose: int = 0) -> tuple[np.ndarray, int, int]:
     """Run the actor-critic algorithm to solve the optimization problem.
 
     Args:
@@ -89,33 +96,34 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, verbo
         nb_grps_min (int): the number of groups in the minimal group
     """
 
-    env = SatelliteEnv(links)
-    actor = ActorNetwork(obs_size=2 * len(links), action_size=3)
-    critic = CriticNetwork(obs_size=2 * len(links))
+    env: SatelliteEnv = SatelliteEnv(links)
+    actor: ActorNetwork = ActorNetwork(obs_size=2 * len(links), action_size=3)
+    critic: CriticNetwork = CriticNetwork(obs_size=2 * len(links))
     # Initiliaze loss
-    critic_loss_fn = nn.MSELoss()
+    critic_loss_fn: nn.MSELoss = nn.MSELoss()
     # Initialize optimizers
-    actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
-    critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
-    rewards_list = []
+    actor_optimizer: optim.Adam = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
+    critic_optimizer: optim.Adam = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
+    rewards_list: list = []
     for _ in range(nb_episodes):
         env.reset()
-        cumulated_reward = 0
+        cumulated_reward: float = 0
         try:
             for j in range(duration_episode):
-                value_state = critic(
+                value_state: torch.Tensor = critic(
                     1 / (env.nb_links - 1) * torch.Tensor(env.state.flatten())
                 )
                 action, action_clipped, norm_dist = sample_action(actor=actor, env=env)
                 # Observe action and reward
                 next_state, reward, _, _ = env.step(action_clipped.numpy().astype(int))
                 cumulated_reward += reward
-                value_next_state = critic(torch.Tensor(next_state.flatten()))
-                target = reward + GAMMA * value_next_state.detach()
+                value_next_state: torch.Tensor = critic(
+                    torch.Tensor(next_state.flatten()))
+                target: float = reward + GAMMA * value_next_state.detach()
                 # Calculate losses
-                critic_loss = critic_loss_fn(value_state, target)
-                actor_loss = (
-                    -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
+                critic_loss: torch.Tensor = critic_loss_fn(value_state, target)
+                actor_loss: torch.Tensor = (
+                        -norm_dist.log_prob(action).unsqueeze(0) * critic_loss.detach()
                 )
                 # Perform backpropagation
                 actor_optimizer.zero_grad()

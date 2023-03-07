@@ -6,6 +6,7 @@ from datetime import datetime
 import numpy as np
 import torch
 import torch.nn as nn
+
 from app.reinforcement_learning.environment import SatelliteEnv
 
 logging.basicConfig(level=logging.INFO)
@@ -243,7 +244,8 @@ class PPO:
 
 
 ################################### Training ###################################
-def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tuple[int, int, int]:
+def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tuple[
+    int, int, int]:
     if verbose == 1:
         print(
             "============================================================================================"

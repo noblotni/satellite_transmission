@@ -29,15 +29,15 @@ class SatelliteEnv(Env):
         super().__init__()
         self.links: list[dict] = links
         self.nb_links: int = len(self.links)
-        self.grp_mod_array: np.array = np.zeros((self.nb_links, self.nb_links))
+        self.grp_mod_array: np.ndarray = np.zeros((self.nb_links, self.nb_links))
         # State variables for the current state
-        self.state: np.array = np.array([(i, i) for i in range(self.nb_links)])
+        self.state: np.ndarray = np.array([(i, i) for i in range(self.nb_links)])
         # Number of modems
         self.nb_mod: int = self.nb_links
         # Number of groups
         self.nb_grps: int = self.nb_links
         # Memorize the optimal state variables
-        self.state_min: np.array = self.state
+        self.state_min: np.ndarray = self.state
         self.nb_mod_min: int = self.nb_links
         self.nb_grps_min: int = self.nb_links
         # Fill the group-modem array
@@ -76,8 +76,8 @@ class SatelliteEnv(Env):
     def step(self, action: np.ndarray) -> tuple[np.array, float, bool, dict]:
         """Execute one time step within the environment."""
         # Copy variables before action
-        state_before_action: np.array = np.copy(self.state)
-        grp_mod_array_before: np.array = np.copy(self.grp_mod_array)
+        state_before_action: np.ndarray = np.copy(self.state)
+        grp_mod_array_before: np.ndarray = np.copy(self.grp_mod_array)
         self.take_action(action)
         # Reset the environment
         # previous state if
@@ -106,14 +106,14 @@ class SatelliteEnv(Env):
         return are_modems_ok and are_groups_ok
 
     def update_grp_mod_array(self) -> None:
-        self.grp_mod_array: np.array = np.zeros((self.nb_links, self.nb_links))
+        self.grp_mod_array: np.ndarray = np.zeros((self.nb_links, self.nb_links))
         for modem in self.state:
             self.grp_mod_array[modem[0], modem[1]] = 1
 
     def check_modems(self) -> bool:
         """Check if the modems respect the constraints."""
         for s in self.state:
-            indices: np.array[int] = np.where(
+            indices: np.ndarray[int] = np.where(
                 np.logical_and(self.state[:, 0] == s[0], self.state[:, 1] == s[1])
             )[0]
             links_in_modem: list[dict] = [self.links[indice] for indice in indices]
@@ -149,7 +149,7 @@ class SatelliteEnv(Env):
 
     def reset(self) -> np.ndarray:
         """Reset the environment to an initial state."""
-        self.state: np.array = np.array([(i, i) for i in range(self.nb_links)])
+        self.state: np.ndarray = np.array([(i, i) for i in range(self.nb_links)])
         self.nb_mod: int = self.nb_links
         self.nb_grps: int = self.nb_links
         self.update_grp_mod_array()
