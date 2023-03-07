@@ -6,6 +6,7 @@ from datetime import datetime
 import numpy as np
 import torch
 import torch.nn as nn
+from numpy import ndarray
 
 from app.reinforcement_learning.environment import SatelliteEnv
 
@@ -20,25 +21,25 @@ if torch.cuda.is_available():
     torch.cuda.empty_cache()
 
 # NN layers
-HIDDEN_SIZE = 128
+HIDDEN_SIZE: int = 128
 # Discount factor
-GAMMA = 0.99
+GAMMA: float = 0.99
 # Learning rates
-LR_ACTOR = 0.0001
-LR_CRITIC = 0.0001
+LR_ACTOR: float = 0.0001
+LR_CRITIC: float = 0.0001
 
 
 ################################## PPO Policy ##################################
 class RolloutBuffer:
-    def __init__(self):
-        self.actions = []
-        self.states = []
-        self.logprobs = []
-        self.rewards = []
-        self.state_values = []
-        self.is_terminals = []
+    def __init__(self) -> None:
+        self.actions: list = []
+        self.states: list = []
+        self.logprobs: list = []
+        self.rewards: list = []
+        self.state_values: list = []
+        self.is_terminals: list = []
 
-    def clear(self):
+    def clear(self) -> None:
         del self.actions[:]
         del self.states[:]
         del self.logprobs[:]
@@ -48,11 +49,11 @@ class RolloutBuffer:
 
 
 class ActorCritic(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim: int, action_dim: int) -> None:
         super(ActorCritic, self).__init__()
-        self.state_dim = state_dim
+        self.state_dim: int = state_dim
         # actor
-        self.actor = nn.Sequential(
+        self.actor: nn.Sequential = nn.Sequential(
             nn.Linear(state_dim, HIDDEN_SIZE),
             nn.Tanh(),
             nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE),
@@ -61,7 +62,7 @@ class ActorCritic(nn.Module):
             nn.Softmax(dim=-1),
         )
         # critic
-        self.critic = nn.Sequential(
+        self.critic: nn.Sequential = nn.Sequential(
             nn.Linear(state_dim, HIDDEN_SIZE),
             nn.Tanh(),
             nn.Linear(HIDDEN_SIZE, HIDDEN_SIZE),
@@ -69,25 +70,27 @@ class ActorCritic(nn.Module):
             nn.Linear(HIDDEN_SIZE, 1),
         )
 
-    def forward(self):
+    def forward(self) -> None:
         raise NotImplementedError
 
-    def act(self, state):
-        action_probs = self.actor(torch.transpose(state, 0, 1))
+    def act(self, state: torch.Tensor) -> tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor
+    ]:
+        action_probs: torch.Tensor = self.actor(torch.transpose(state, 0, 1))
         # print(action_probs[0], torch.Tensor.mean(action_probs[0]))
 
-        norm_dist = torch.distributions.MultivariateNormal(
+        norm_dist: torch.distributions.MultivariateNormal = torch.distributions.MultivariateNormal(
             loc=action_probs[0], covariance_matrix=torch.diag(action_probs[0])
         )
-        action = norm_dist.sample()
+        action: torch.Tensor = norm_dist.sample()
 
         """dist = Categorical(action_probs)
         action = dist.sample()"""
 
-        action_logprob = norm_dist.log_prob(action)
-        state_val = self.critic(torch.transpose(state, 0, 1))[0]
+        action_logprob: torch.Tensor = norm_dist.log_prob(action)
+        state_val: torch.Tensor = self.critic(torch.transpose(state, 0, 1))[0]
 
-        action_clipped = torch.clip(
+        action_clipped: torch.Tensor = torch.clip(
             (self.state_dim - 1) * action,
             min=torch.zeros(3, dtype=torch.int),
             max=torch.Tensor(
@@ -102,52 +105,55 @@ class ActorCritic(nn.Module):
             state_val.detach(),
         )
 
-    def evaluate(self, state, action):
-        action_probs = []
+    def evaluate(self, state: torch.Tensor, action: torch.Tensor) -> tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor
+    ]:
+        action_probs: list = []
         for i in range(state.shape[0]):
             action_probs.append(self.actor(torch.transpose(state[i], 0, 1))[0])
-        action_probs = torch.stack(action_probs)
+        action_probs: torch.Tensor = torch.stack(action_probs)
 
         # dist = Categorical(action_probs)
-        norm_dist = torch.distributions.MultivariateNormal(
+        norm_dist: torch.distributions.MultivariateNormal = torch.distributions.MultivariateNormal(
             loc=action_probs[0], covariance_matrix=torch.diag(action_probs[0])
         )
-        action_logprobs = norm_dist.log_prob(action)
-        dist_entropy = norm_dist.entropy()
-        state_values = []
+        action_logprobs: torch.Tensor = norm_dist.log_prob(action)
+        dist_entropy: torch.Tensor = norm_dist.entropy()
+        state_values: list = []
         for i in range(state.shape[0]):
             state_values.append(self.critic(torch.transpose(state[i], 0, 1))[0])
-        state_values = torch.stack(state_values)
+        state_values: torch.Tensor = torch.stack(state_values)
 
         return action_logprobs, state_values, dist_entropy
 
 
 class PPO:
     def __init__(
-            self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip
+            self, state_dim: int, action_dim: int, lr_actor: float, lr_critic: float,
+            gamma: float, nb_epochs: int, eps_clip: float
     ):
-        self.gamma = gamma
-        self.eps_clip = eps_clip
-        self.K_epochs = K_epochs
+        self.gamma: float = gamma
+        self.eps_clip: float = eps_clip
+        self.nb_epochs: int = nb_epochs
 
-        self.buffer = RolloutBuffer()
+        self.buffer: RolloutBuffer = RolloutBuffer()
 
-        self.policy = ActorCritic(state_dim, action_dim).to(device)
-        self.optimizer = torch.optim.Adam(
+        self.policy: ActorCritic = ActorCritic(state_dim, action_dim).to(device)
+        self.optimizer: torch.optim.Adam = torch.optim.Adam(
             [
                 {"params": self.policy.actor.parameters(), "lr": lr_actor},
                 {"params": self.policy.critic.parameters(), "lr": lr_critic},
             ]
         )
 
-        self.policy_old = ActorCritic(state_dim, action_dim).to(device)
+        self.policy_old: ActorCritic = ActorCritic(state_dim, action_dim).to(device)
         self.policy_old.load_state_dict(self.policy.state_dict())
 
-        self.MseLoss = nn.MSELoss()
+        self.MseLoss: nn.MSELoss = nn.MSELoss()
 
-    def select_action(self, state):
+    def select_action(self, state: torch.Tensor | np.ndarray) -> torch.Tensor:
         with torch.no_grad():
-            state = torch.FloatTensor(state).to(device)
+            state: torch.Tensor = torch.FloatTensor(state).to(device)
             action_clipped, action, action_logprob, state_val = self.policy_old.act(
                 state
             )
@@ -158,10 +164,10 @@ class PPO:
         self.buffer.state_values.append(state_val)
         return action_clipped
 
-    def update(self):
+    def update(self) -> None:
         # Monte Carlo estimate of returns
-        rewards = []
-        discounted_reward = 0
+        rewards: list = []
+        discounted_reward: float = 0
         for reward, is_terminal in zip(
                 reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)
         ):
@@ -171,50 +177,50 @@ class PPO:
             rewards.insert(0, discounted_reward)
 
         # Normalizing the rewards
-        rewards = torch.tensor(rewards, dtype=torch.float32).to(device)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
+        rewards: torch.Tensor = torch.tensor(rewards, dtype=torch.float32).to(device)
+        rewards: torch.Tensor = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
         # convert list to tensor
-        old_states = (
+        old_states: torch.Tensor = (
             torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
         )
-        old_actions = (
+        old_actions: torch.Tensor = (
             torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
         )
-        old_logprobs = (
+        old_logprobs: torch.Tensor = (
             torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
         )
-        old_state_values = (
+        old_state_values: torch.Tensor = (
             torch.squeeze(torch.stack(self.buffer.state_values, dim=0))
             .detach()
             .to(device)
         )
 
         # calculate advantages
-        advantages = rewards.detach() - old_state_values.detach()
+        advantages: torch.Tensor = rewards.detach() - old_state_values.detach()
 
         # Optimize policy for K epochs
-        for _ in range(self.K_epochs):
+        for _ in range(self.nb_epochs):
             # Evaluating old actions and values
             logprobs, state_values, dist_entropy = self.policy.evaluate(
                 old_states, old_actions
             )
 
             # match state_values tensor dimensions with rewards tensor
-            state_values = torch.squeeze(state_values)
+            state_values: torch.Tensor = torch.squeeze(state_values)
 
             # Finding the ratio (pi_theta / pi_theta__old)
-            ratios = torch.exp(logprobs - old_logprobs.detach())
+            ratios: torch.Tensor = torch.exp(logprobs - old_logprobs.detach())
 
             # Finding Surrogate Loss
-            surr1 = ratios * advantages
-            surr2 = (
+            surr1: torch.Tensor = ratios * advantages
+            surr2: torch.Tensor = (
                     torch.clamp(ratios, 1 - self.eps_clip,
                                 1 + self.eps_clip) * advantages
             )
 
             # final loss of clipped objective PPO
-            loss = (
+            loss: torch.Tensor = (
                     -torch.min(surr1, surr2)
                     + 0.5 * self.MseLoss(state_values, rewards)
                     - 0.01 * dist_entropy
@@ -231,10 +237,10 @@ class PPO:
         # clear buffer
         self.buffer.clear()
 
-    def save(self, checkpoint_path):
+    def save(self, checkpoint_path: str) -> None:
         torch.save(self.policy_old.state_dict(), checkpoint_path)
 
-    def load(self, checkpoint_path):
+    def load(self, checkpoint_path: str) -> None:
         self.policy_old.load_state_dict(
             torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
         )
@@ -244,8 +250,8 @@ class PPO:
 
 
 ################################### Training ###################################
-def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tuple[
-    int, int, int]:
+def run_ppo(links: list[dict], nb_episodes: int = int(3e4),
+            duration_episode: int = 1000, verbose: int = 1) -> tuple[ndarray, int, int]:
     if verbose == 1:
         print(
             "============================================================================================"
@@ -265,58 +271,50 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tu
     ####### initialize environment hyperparameters ######
     env_name: str = "SatelliteEnv"
 
-    max_ep_len = duration_episode  # max timesteps in one episode
-    max_training_timesteps = (
-        nb_episodes  # break training loop if timeteps > max_training_timesteps
-    )
+    max_ep_len: int = duration_episode  # max timesteps in one episode
+    max_training_timesteps: int = nb_episodes
 
-    print_freq = max_ep_len * 2  # print avg reward in the interval (in num timesteps)
-    log_freq = max_ep_len * 2  # log avg reward in the interval (in num timesteps)
-    save_model_freq = int(1000)  # save model frequency (in num timesteps)
+    print_freq: int = max_ep_len * 2  # print avg reward in the interval (in num timesteps)
+    log_freq: int = max_ep_len * 2  # log avg reward in the interval (in num timesteps)
+    save_model_freq: int = int(1000)  # save model frequency (in num timesteps)
     #####################################################
 
     ## Note : print/log frequencies should be > than max_ep_len
 
     ################ PPO hyperparameters ################
-    update_timestep = max_ep_len * 4  # update policy every n timesteps
-    K_epochs = 5  # update policy for K epochs in one PPO update
+    update_timestep: int = max_ep_len * 4  # update policy every n timesteps
+    nb_epochs: int = 5  # update policy for K epochs in one PPO update
 
-    eps_clip = 0.2  # clip parameter for PPO
-    gamma = 0.99  # discount factor
+    eps_clip: float = 0.2  # clip parameter for PPO
+    gamma: float = 0.99  # discount factor
 
-    lr_actor = 0.0003  # learning rate for actor network
-    lr_critic = 0.001  # learning rate for critic network
+    lr_actor: float = 0.0003  # learning rate for actor network
+    lr_critic: float = 0.001  # learning rate for critic network
 
-    random_seed = 0  # set random seed if required (0 = no random seed)
+    random_seed: int = 0  # set random seed if required (0 = no random seed)
     #####################################################
 
     if verbose == 1:
-        ("training environment name : " + env_name)
-    env = SatelliteEnv(links)
+        print("training environment name : " + env_name)
+    env: SatelliteEnv = SatelliteEnv(links)
 
     # state space dimension
-    state_dim = env.observation_space.shape[0]
+    state_dim: int = env.observation_space.shape[0]
 
     # action space dimension
-    action_dim = env.action_space.shape[0]
+    action_dim: int = env.action_space.shape[0]
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir = "app/PPO_logs"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    log_dir = log_dir + "/" + env_name + "/"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    log_dir: str = f"app/PPO_logs/{env_name}/"
+    os.makedirs(log_dir, exist_ok=True)
 
     #### get number of log files in log directory
-    run_num = 0
-    current_num_files = next(os.walk(log_dir))[2]
-    run_num = len(current_num_files)
+    current_num_files: any = next(os.walk(log_dir))[2]
+    run_num: int = len(current_num_files)
 
     #### create new log file for each run
-    log_f_name = log_dir + "/PPO_" + env_name + "_log_" + str(run_num) + ".csv"
+    log_f_name: str = f"{log_dir}/PPO_{env_name}_log_{run_num}.csv"
 
     if verbose == 1:
         print("current logging run number for " + env_name + " : ", run_num)
@@ -366,7 +364,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tu
             "--------------------------------------------------------------------------------------------"
         )
         print("PPO update frequency : " + str(update_timestep) + " timesteps")
-        print("PPO K epochs : ", K_epochs)
+        print("PPO K epochs : ", nb_epochs)
         print("PPO epsilon clip : ", eps_clip)
         print("discount factor (gamma) : ", gamma)
         print(
@@ -392,12 +390,12 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tu
     ################# training procedure ################
 
     # initialize a PPO agent
-    ppo_agent = PPO(
-        state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip
+    ppo_agent: PPO = PPO(
+        state_dim, action_dim, lr_actor, lr_critic, gamma, nb_epochs, eps_clip
     )
 
     # track total training time
-    start_time = datetime.now().replace(microsecond=0)
+    start_time: datetime = datetime.now().replace(microsecond=0)
     if verbose == 1:
         print("Started training at (GMT) : ", start_time)
 
@@ -406,102 +404,103 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tu
         )
 
     # logging file
-    log_f = open(log_f_name, "w+")
-    log_f.write("episode,timestep,reward\n")
+    # log_f = open(log_f_name, "w+")
+    with open(log_f_name, "w+") as log_f:
+        log_f.write("episode,timestep,reward\n")
 
-    # printing and logging variables
-    print_running_reward = 0
-    print_running_episodes = 0
+        # printing and logging variables
+        print_running_reward: int = 0
+        print_running_episodes: int = 0
 
-    log_running_reward = 0
-    log_running_episodes = 0
+        log_running_reward: int = 0
+        log_running_episodes: int = 0
 
-    time_step = 0
-    i_episode = 0
+        time_step: int = 0
+        i_episode: int = 0
 
-    # training loop
-    while time_step <= max_training_timesteps:
+        # training loop
+        while time_step <= max_training_timesteps:
 
-        state = env.reset()
-        current_ep_reward = 0
+            state: np.ndarray = env.reset()
+            current_ep_reward: float = 0
 
-        for t in range(1, max_ep_len + 1):
+            for t in range(1, max_ep_len + 1):
 
-            # select action with policy
-            action = ppo_agent.select_action(state)
-            state, reward, done, _ = env.step(action)
+                # select action with policy
+                action: torch.Tensor = ppo_agent.select_action(state)
+                state, reward, done, _ = env.step(action)
 
-            # saving reward and is_terminals
-            ppo_agent.buffer.rewards.append(reward)
-            ppo_agent.buffer.is_terminals.append(done)
+                # saving reward and is_terminals
+                ppo_agent.buffer.rewards.append(reward)
+                ppo_agent.buffer.is_terminals.append(done)
 
-            time_step += 1
-            current_ep_reward += reward
+                time_step += 1
+                current_ep_reward += reward
 
-            # update PPO agent
-            if time_step % update_timestep == 0:
-                ppo_agent.update()
+                # update PPO agent
+                if time_step % update_timestep == 0:
+                    ppo_agent.update()
 
-            # log in logging file
-            if time_step % log_freq == 0:
-                # log average reward till last episode
-                log_avg_reward = log_running_reward / log_running_episodes
-                log_avg_reward = round(log_avg_reward, 4)
+                # log in logging file
+                if time_step % log_freq == 0:
+                    # log average reward till last episode
+                    log_avg_reward: float = log_running_reward / log_running_episodes
+                    log_avg_reward: float = round(log_avg_reward, 4)
 
-                log_f.write("{},{},{}\n".format(i_episode, time_step, log_avg_reward))
-                log_f.flush()
+                    log_f.write(
+                        "{},{},{}\n".format(i_episode, time_step, log_avg_reward))
+                    log_f.flush()
 
-                log_running_reward = 0
-                log_running_episodes = 0
+                    log_running_reward = 0
+                    log_running_episodes = 0
 
-            # printing average reward
-            if time_step % print_freq == 0:
+                # printing average reward
+                if time_step % print_freq == 0:
 
-                # print average reward till last episode
-                print_avg_reward = print_running_reward / print_running_episodes
-                print_avg_reward = round(print_avg_reward, 2)
-
-                if verbose == 1:
-                    print(
-                        "Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(
-                            i_episode, time_step, print_avg_reward
-                        )
+                    # print average reward till last episode
+                    print_avg_reward = round(
+                        print_running_reward / print_running_episodes, 2
                     )
 
-                print_running_reward = 0
-                print_running_episodes = 0
+                    if verbose == 1:
+                        print(
+                            "Episode : {} \t\t Timestep : {} \t\t Average Reward : {}"
+                            .format(i_episode, time_step, print_avg_reward)
+                        )
 
-            # save model weights
-            if time_step % save_model_freq == 0 and verbose == 1:
-                print(
-                    "--------------------------------------------------------------------------------------------"
-                )
-                print(f"{env.nb_grps_min = }")
-                print(f"{env.nb_mod_min = }")
-                # print("saving model at : " + checkpoint_path)
-                # ppo_agent.save(checkpoint_path)
-                # print("model saved")
-                print(
-                    "Elapsed Time  : ",
-                    datetime.now().replace(microsecond=0) - start_time,
-                )
-                print(
-                    "--------------------------------------------------------------------------------------------"
-                )
+                    print_running_reward = 0
+                    print_running_episodes = 0
 
-            # break; if the episode is over
-            if done:
-                break
+                # save model weights
+                if time_step % save_model_freq == 0 and verbose == 1:
+                    print(
+                        "--------------------------------------------------------------------------------------------"
+                    )
+                    print(f"{env.nb_grps_min = }")
+                    print(f"{env.nb_mod_min = }")
+                    # print("saving model at : " + checkpoint_path)
+                    # ppo_agent.save(checkpoint_path)
+                    # print("model saved")
+                    print(
+                        "Elapsed Time  : ",
+                        datetime.now().replace(microsecond=0) - start_time,
+                    )
+                    print(
+                        "--------------------------------------------------------------------------------------------"
+                    )
 
-        print_running_reward += current_ep_reward
-        print_running_episodes += 1
+                # break; if the episode is over
+                if done:
+                    break
 
-        log_running_reward += current_ep_reward
-        log_running_episodes += 1
+            print_running_reward += current_ep_reward
+            print_running_episodes += 1
 
-        i_episode += 1
+            log_running_reward += current_ep_reward
+            log_running_episodes += 1
 
-    log_f.close()
+            i_episode += 1
+
     env.close()
 
     if verbose == 1:
