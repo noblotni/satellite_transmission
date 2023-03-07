@@ -1,7 +1,7 @@
 """Satellite environment."""
+import numpy as np
 from gymnasium import Env
 from gymnasium import spaces
-import numpy as np
 
 # Define constants
 # Modems constants
@@ -120,9 +120,9 @@ class SatelliteEnv(Env):
             binary_rate = np.sum([link["binary_rate"] for link in links_in_modem])
             symbol_rate = np.sum([link["symbol_rate"] for link in links_in_modem])
             if (
-                len(indices) > MOD_NB_LINKS
-                or binary_rate > MOD_BIN_RATE
-                or symbol_rate > MOD_SYMB_RATE
+                    len(indices) > MOD_NB_LINKS
+                    or binary_rate > MOD_BIN_RATE
+                    or symbol_rate > MOD_SYMB_RATE
             ):
                 return False
         return True
@@ -140,9 +140,9 @@ class SatelliteEnv(Env):
                 [link["group_inverse_binary_rate"] for link in links_in_group]
             )
             if (
-                bandwidth > GRP_BANDWIDTH
-                or len(indices) > GRP_NB_LINKS
-                or inverse_binary_rate > min_group_inverse_binary_rate
+                    bandwidth > GRP_BANDWIDTH
+                    or len(indices) > GRP_NB_LINKS
+                    or inverse_binary_rate > min_group_inverse_binary_rate
             ):
                 return False
         return True

@@ -2,8 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from satellite_transmission.environment import SatelliteEnv
-import satellite_transmission.config as config
+from app.reinforcement_learning.environment import SatelliteEnv
+import config
 import logging
 
 logging.basicConfig(level=logging.INFO)

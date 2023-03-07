@@ -1,9 +1,12 @@
 # Data folder
 data/
+
 # Experiments folder
 experiments/
+
 # Results folder
 results/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -148,9 +151,20 @@ cython_debug/
 
 # End of https://mrkandreev.name/snippets/gitignore-generator/#Python
 
-# Experiments folder
-experiments/
-
-
 # Json files
 *.json
+
+# Logs
+PPO_logs/
+
+# Output
+output/
+
+# MacOS files
+.DS_Store
+
+# PyCharm files
+.idea/
+
+# Cache files
+*.pyc

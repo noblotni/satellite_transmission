@@ -1,12 +1,12 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
+import logging
 import os
-import numpy as np
 from datetime import datetime
+
+import numpy as np
 import torch
 import torch.nn as nn
-import logging
-from satellite_transmission.environment import SatelliteEnv
-
+from app.reinforcement_learning.environment import SatelliteEnv
 
 logging.basicConfig(level=logging.INFO)
 
@@ -123,7 +123,7 @@ class ActorCritic(nn.Module):
 
 class PPO:
     def __init__(
-        self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip
+            self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip
     ):
         self.gamma = gamma
         self.eps_clip = eps_clip
@@ -162,7 +162,7 @@ class PPO:
         rewards = []
         discounted_reward = 0
         for reward, is_terminal in zip(
-            reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)
+                reversed(self.buffer.rewards), reversed(self.buffer.is_terminals)
         ):
             if is_terminal:
                 discounted_reward = 0
@@ -194,7 +194,6 @@ class PPO:
 
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
-
             # Evaluating old actions and values
             logprobs, state_values, dist_entropy = self.policy.evaluate(
                 old_states, old_actions
@@ -209,14 +208,15 @@ class PPO:
             # Finding Surrogate Loss
             surr1 = ratios * advantages
             surr2 = (
-                torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
+                    torch.clamp(ratios, 1 - self.eps_clip,
+                                1 + self.eps_clip) * advantages
             )
 
             # final loss of clipped objective PPO
             loss = (
-                -torch.min(surr1, surr2)
-                + 0.5 * self.MseLoss(state_values, rewards)
-                - 0.01 * dist_entropy
+                    -torch.min(surr1, surr2)
+                    + 0.5 * self.MseLoss(state_values, rewards)
+                    - 0.01 * dist_entropy
             )
 
             # take gradient step
@@ -243,9 +243,8 @@ class PPO:
 
 
 ################################### Training ###################################
-def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
-
-    if verbose==1:
+def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1) -> tuple[int, int, int]:
+    if verbose == 1:
         print(
             "============================================================================================"
         )
@@ -262,7 +261,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
         )
 
     ####### initialize environment hyperparameters ######
-    env_name = "SatelliteEnv"
+    env_name: str = "SatelliteEnv"
 
     max_ep_len = duration_episode  # max timesteps in one episode
     max_training_timesteps = (
@@ -289,7 +288,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
     random_seed = 0  # set random seed if required (0 = no random seed)
     #####################################################
 
-    if verbose==1:
+    if verbose == 1:
         ("training environment name : " + env_name)
     env = SatelliteEnv(links)
 
@@ -301,7 +300,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir = "PPO_logs"
+    log_dir = "app/PPO_logs"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
@@ -317,7 +316,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
     #### create new log file for each run
     log_f_name = log_dir + "/PPO_" + env_name + "_log_" + str(run_num) + ".csv"
 
-    if verbose==1:
+    if verbose == 1:
         print("current logging run number for " + env_name + " : ", run_num)
         print("logging at : " + log_f_name)
     #####################################################
@@ -339,7 +338,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
     #####################################################"""
 
     ############# print all hyperparameters #############
-    if verbose==1:
+    if verbose == 1:
         print(
             "--------------------------------------------------------------------------------------------"
         )
@@ -374,7 +373,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
         print("optimizer learning rate actor : ", lr_actor)
         print("optimizer learning rate critic : ", lr_critic)
     if random_seed:
-        if verbose==1:
+        if verbose == 1:
             print(
                 "--------------------------------------------------------------------------------------------"
             )
@@ -397,7 +396,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
 
     # track total training time
     start_time = datetime.now().replace(microsecond=0)
-    if verbose==1:
+    if verbose == 1:
         print("Started training at (GMT) : ", start_time)
 
         print(
@@ -443,7 +442,6 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
 
             # log in logging file
             if time_step % log_freq == 0:
-
                 # log average reward till last episode
                 log_avg_reward = log_running_reward / log_running_episodes
                 log_avg_reward = round(log_avg_reward, 4)
@@ -461,7 +459,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
                 print_avg_reward = print_running_reward / print_running_episodes
                 print_avg_reward = round(print_avg_reward, 2)
 
-                if verbose==1:
+                if verbose == 1:
                     print(
                         "Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(
                             i_episode, time_step, print_avg_reward
@@ -472,7 +470,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
                 print_running_episodes = 0
 
             # save model weights
-            if time_step % save_model_freq == 0 and verbose==1:
+            if time_step % save_model_freq == 0 and verbose == 1:
                 print(
                     "--------------------------------------------------------------------------------------------"
                 )
@@ -504,7 +502,7 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
     log_f.close()
     env.close()
 
-    if verbose==1:
+    if verbose == 1:
         # print total training time
         print(
             "============================================================================================"
