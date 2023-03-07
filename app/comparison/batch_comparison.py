@@ -9,15 +9,15 @@ def batch_comparison(links: list, algo: str, nb_episodes: int, duration_episode:
                      nb_repeat: int) -> tuple[int, int, int]:
     nb_grps_min_list: list[int] = []
     nb_mod_min_list: list[int] = []
-    state_min_list: list[int] = []
+    state_min_list: list[np.array] = []
 
     if algo == "compare":
         nb_grps_min_list_actor: list[int] = []
         nb_mod_min_list_actor: list[int] = []
-        state_min_list_actor: list[int] = []
+        state_min_list_actor: list[np.array] = []
         nb_grps_min_list_ppo: list[int] = []
         nb_mod_min_list_ppo: list[int] = []
-        state_min_list_ppo: list[int] = []
+        state_min_list_ppo: list[np.array] = []
 
     best_ppo: int = 0
     best_actor: int = 0
@@ -86,13 +86,13 @@ def batch_comparison(links: list, algo: str, nb_episodes: int, duration_episode:
         nb_mod_min_list_actor: np.array = np.array(nb_mod_min_list_actor)
 
         best_ppo_index: int = np.argmin(nb_grps_min_list_ppo + nb_mod_min_list_ppo)
-        state_min_ppo: int = state_min_list_ppo[best_ppo_index]
+        state_min_ppo: np.array = state_min_list_ppo[best_ppo_index]
         nb_grps_min_ppo: int = nb_grps_min_list_ppo[best_ppo_index]
         nb_mod_min_ppo: int = nb_mod_min_list_ppo[best_ppo_index]
 
         best_actor_index: int = np.argmin(
             nb_grps_min_list_actor + nb_mod_min_list_actor)
-        state_min_actor: int = state_min_list_actor[best_actor_index]
+        state_min_actor: np.array = state_min_list_actor[best_actor_index]
         nb_grps_min_actor: int = nb_grps_min_list_actor[best_actor_index]
         nb_mod_min_actor: int = nb_mod_min_list_actor[best_actor_index]
 
@@ -107,17 +107,17 @@ def batch_comparison(links: list, algo: str, nb_episodes: int, duration_episode:
         print("=========================================")
         if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
             print(colored("PPO", "green"), "found the best solution")
-            state_min: int = state_min_ppo
+            state_min: np.array = state_min_ppo
             nb_grps_min: int = nb_grps_min_ppo
             nb_mod_min: int = nb_mod_min_ppo
         else:
             print(colored("Actor-Critic", "green"), "found the best solution")
-            state_min: int = state_min_actor
+            state_min: np.array = state_min_actor
             nb_grps_min: int = nb_grps_min_actor
             nb_mod_min: int = nb_mod_min_actor
     else:
         best_index: int = np.argmin(nb_grps_min_list + nb_grps_min_list)
-        state_min: int = state_min_list[best_index]
+        state_min: np.array = state_min_list[best_index]
         nb_grps_min: int = nb_grps_min_list[best_index]
         nb_mod_min: int = nb_mod_min_list[best_index]
 
