@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "app"
+name = "satellite_rl"
 version = "0.1.0"
 description = "Package to optimize a satellite transmission network with reinforcement learning."
 authors = [
@@ -9,7 +9,7 @@ authors = [
 ]
 license = "MIT"
 readme = "README.md"
-packages = [{ include = "app" }]
+packages = [{ include = "satellite_rl" }]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
@@ -28,7 +28,7 @@ build-backend = "poetry.core.masonry.api"
 
 
 [tool.poetry.scripts]
-generate_easy_instances = "app.generate_easy_instances:main"
-generate_random_instances = "app.generate_random_instances:main"
-analyze_actor_critic = "app.analyze_actor_critic:main"
-main = "app.main:main"
+generate_easy_instances = "satellite_rl.generate_easy_instances:main"
+generate_random_instances = "satellite_rl.generate_random_instances:main"
+analyze_actor_critic = "satellite_rl.analyze_actor_critic:main"
+main = "satellite_rl.main:main"

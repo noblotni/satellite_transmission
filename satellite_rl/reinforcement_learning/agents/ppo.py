@@ -8,7 +8,7 @@ import torch
 import torch.nn as nn
 from numpy import ndarray
 
-from app.reinforcement_learning.environment import SatelliteEnv
+from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 
 logging.basicConfig(level=logging.INFO)
 
@@ -306,7 +306,7 @@ def run_ppo(links: list[dict], nb_episodes: int = int(3e4),
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir: str = f"app/PPO_logs/{env_name}/"
+    log_dir: str = f"satellite_rl/PPO_logs/{env_name}/"
     os.makedirs(log_dir, exist_ok=True)
 
     #### get number of log files in log directory

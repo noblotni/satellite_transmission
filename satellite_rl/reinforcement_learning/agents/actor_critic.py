@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 import config
-from app.reinforcement_learning.environment import SatelliteEnv
+from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 
 logging.basicConfig(level=logging.INFO)
 # Set the number of threads for Pytorch

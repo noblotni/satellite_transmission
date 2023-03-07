@@ -50,7 +50,7 @@ def generate_all_instances(nb_instances: int, folder_path: Path) -> None:
 
 
 def main() -> None:
-    folder_path: Path = Path(f"app/data/instances_easy_{NB_LINKS}")
+    folder_path: Path = Path(f"satellite_rl/data/instances_easy_{NB_LINKS}")
     if not (folder_path.exists()):
         os.makedirs(folder_path)
 

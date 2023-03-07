@@ -7,8 +7,8 @@ from pathlib import Path
 import pandas as pd
 import torch
 
-from app.reinforcement_learning.agents.actor_critic import run_actor_critic
-from app.report import generate_solution_report
+from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
+from satellite_rl.report import generate_solution_report
 
 
 def solve(links: list, i: int) -> tuple[int, int]:
@@ -18,7 +18,7 @@ def solve(links: list, i: int) -> tuple[int, int]:
     generate_solution_report(
         state=state_min,
         links=links,
-        output_path=Path("app/output/state_min_{}.json".format(i)),
+        output_path=Path("satellite_rl/output/state_min_{}.json".format(i)),
     )
     return nb_mod, nb_grps
 
@@ -36,4 +36,4 @@ def main() -> None:
     solutions_df: pd.DataFrame = pd.DataFrame(
         solutions, columns=["nb_modems", "nb_groups"]
     )
-    solutions_df.to_csv("app/output/solutions.csv")
+    solutions_df.to_csv("satellite_rl/output/solutions.csv")

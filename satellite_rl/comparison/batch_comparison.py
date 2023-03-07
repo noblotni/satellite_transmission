@@ -1,8 +1,8 @@
 import numpy as np
 from termcolor import colored
 
-from app.reinforcement_learning.agents.actor_critic import run_actor_critic
-from app.reinforcement_learning.agents.ppo import run_ppo
+from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
+from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
 
 
 def batch_comparison(links: list, algo: str, nb_episodes: int, duration_episode: int,

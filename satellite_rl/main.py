@@ -5,10 +5,10 @@ from pathlib import Path
 
 from termcolor import colored
 
-from app.reinforcement_learning.agents.actor_critic import run_actor_critic
-from app.reinforcement_learning.agents.ppo import run_ppo
-from app.report import generate_solution_report
-from app.comparison import batch_comparison
+from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
+from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
+from satellite_rl.report import generate_solution_report
+from satellite_rl.comparison import batch_comparison
 
 
 def main() -> None:
@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument("--duration_episode", help="Duration of an episode.", type=int,
                         default=10000)
     parser.add_argument("--output_path", "-o", help="Path to the output JSON file.",
-                        type=Path, default="app/output/state_min.json")
+                        type=Path, default="satellite_rl/output/state_min.json")
     parser.add_argument("--nb_repeat",
                         help="Number of times to repeat the optimization.", type=int,
                         default=1)
