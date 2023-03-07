@@ -5,10 +5,10 @@ from pathlib import Path
 
 from termcolor import colored
 
+from satellite_rl.comparison import batch_comparison
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
 from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
 from satellite_rl.report import generate_solution_report
-from satellite_rl.comparison import batch_comparison
 
 
 def main() -> None:
@@ -83,3 +83,7 @@ def main() -> None:
     generate_solution_report(
         state=state_min, links=links, output_path=args.output_path
     )
+
+
+if __name__ == "__main__":
+    main()

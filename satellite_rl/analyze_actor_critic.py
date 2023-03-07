@@ -37,3 +37,7 @@ def main() -> None:
         solutions, columns=["nb_modems", "nb_groups"]
     )
     solutions_df.to_csv("satellite_rl/output/solutions.csv")
+
+
+if __name__ == "__main__":
+    main()

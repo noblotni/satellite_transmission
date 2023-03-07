@@ -54,3 +54,7 @@ def main() -> None:
         folder_path.mkdir()
 
     generate_all_instances(nb_instances=NB_INSTANCES, folder_path=folder_path)
+
+
+if __name__ == "__main__":
+    main()
