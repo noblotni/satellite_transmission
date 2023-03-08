@@ -3,7 +3,7 @@ from satellite_transmission.ppo import run_ppo
 from termcolor import colored
 import numpy as np
 
-def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, verbose):
+def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, timeout, verbose):
     nb_grps_min_list = []
     nb_mod_min_list = []
     state_min_list = []
@@ -24,7 +24,7 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, verb
         print(f"Repeat {i+1}/{nb_repeat}...")
         if algo == "actor-critic":
             state_min, nb_grps_min, nb_mod_min = run_actor_critic(
-                links, nb_episodes=nb_episodes, duration_episode=duration_episode, verbose=verbose
+                links, nb_episodes=nb_episodes, duration_episode=duration_episode, timeout=timeout, verbose=verbose
             )
             state_min_list.append(state_min)
             nb_grps_min_list.append(nb_grps_min)
@@ -32,7 +32,7 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, verb
 
         elif algo == "ppo":
             state_min, nb_grps_min, nb_mod_min = run_ppo(
-                links, nb_episodes=nb_episodes, duration_episode=duration_episode, verbose=verbose
+                links, nb_episodes=nb_episodes, duration_episode=duration_episode, timeout=timeout, verbose=verbose
             )
             state_min_list.append(state_min)
             nb_grps_min_list.append(nb_grps_min)
@@ -41,11 +41,11 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, verb
         elif algo == "compare":
             print('Actor-Critic...')
             state_min_actor, nb_grps_min_actor, nb_mod_min_actor = run_actor_critic(
-                links, nb_episodes=nb_episodes, duration_episode=1000, verbose=verbose
+                links, nb_episodes=nb_episodes, duration_episode=1000, timeout=timeout, verbose=verbose
             )
             print('PPO...')
             state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo = run_ppo(
-                links, nb_episodes=nb_episodes, duration_episode=13000, verbose=verbose
+                links, nb_episodes=nb_episodes, duration_episode=13000, timeout=timeout, verbose=verbose
             )
             nb_grps_min_list_actor.append(nb_grps_min_actor)
             nb_mod_min_list_actor.append(nb_mod_min_actor)

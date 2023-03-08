@@ -19,7 +19,7 @@ if torch.cuda.is_available():
     torch.cuda.empty_cache()
 
 # NN layers
-HIDDEN_SIZE = 128
+HIDDEN_SIZE = 256
 # Discount factor
 GAMMA = 0.99
 # Learning rates
@@ -243,7 +243,7 @@ class PPO:
 
 
 ################################### Training ###################################
-def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
+def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, verbose: int):
 
     if verbose==1:
         print(
@@ -490,8 +490,16 @@ def run_ppo(links, nb_episodes=int(3e4), duration_episode=1000, verbose=1):
                 )
 
             # break; if the episode is over
-            if done:
+            elapsed_time = datetime.now().replace(microsecond=0) - start_time
+            if done or (elapsed_time.seconds > timeout and timeout != 0):
                 break
+        
+        if elapsed_time.seconds > timeout and timeout != 0:
+            if verbose==1:
+                print("============================================================================================")
+                print("TIMEOUT REACHED")
+                print("============================================================================================")
+            break
 
         print_running_reward += current_ep_reward
         print_running_episodes += 1

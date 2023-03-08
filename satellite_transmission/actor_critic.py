@@ -5,6 +5,7 @@ import torch.optim as optim
 from satellite_transmission.environment import SatelliteEnv
 import satellite_transmission.config as config
 import logging
+from datetime import datetime
 
 logging.basicConfig(level=logging.INFO)
 # Set the number of threads for Pytorch
@@ -75,7 +76,7 @@ def sample_action(actor: ActorNetwork, env: SatelliteEnv):
     return action, action_clipped, norm_dist
 
 
-def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, verbose: int = 0):
+def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, timeout: int, verbose: int):
     """Run the actor-critic algorithm to solve the optimization problem.
 
     Args:
@@ -98,6 +99,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, verbo
     actor_optimizer = optim.Adam(params=actor.parameters(), lr=LR_ACTOR)
     critic_optimizer = optim.Adam(params=critic.parameters(), lr=LR_CRITIC)
     rewards_list = []
+    start_time = datetime.now().replace(microsecond=0)
     for _ in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
@@ -128,14 +130,17 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, verbo
                 # Logs
                 if j % 1000 == 0 and verbose == 1:
                     logging.info(
-                        "Timestep: {}, Cumulated reward: {}".format(j, cumulated_reward)
+                        "Timestep: {}, Cumulated reward: {}, Elapsed time: {}s".format(j, cumulated_reward, (datetime.now().replace(microsecond=0) - start_time).seconds)
                     )
                     logging.info(
                         "Minimal solution is : {} modems, {} groups".format(
                             env.nb_mod_min, env.nb_grps_min
                         )
                     )
-
+                if timeout != 0 and (datetime.now().replace(microsecond=0) - start_time).seconds > timeout:
+                    if verbose == 1:
+                        logging.info("Timeout reached, stopping the algorithm")
+                    return env.state_min, env.nb_mod_min, env.nb_grps_min
         except ValueError:
             # Prevent the algorithm from stopping
             # if the loss of the actor becomes too
