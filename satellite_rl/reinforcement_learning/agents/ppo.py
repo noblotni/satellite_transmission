@@ -291,8 +291,13 @@ def run_ppo(
 
     #####################################################
     if verbose == 2:
-        ("training environment name : " + env_name)
-    env = SatelliteEnv(links)
+        print("training environment name : " + env_name)
+    env = SatelliteEnv(
+        links,
+        nb_groups_init=len(links),
+        nb_modems_init=len(links),
+        nb_modems_per_group=len(links),
+    )
 
     # state space dimension
     state_dim = env.observation_space.shape[0]
@@ -483,8 +488,8 @@ def run_ppo(
                     )
                     print(
                         "Minimal solution is : {} modems, {} groups".format(
-                            colored(env.nb_mod_min, "yellow"),
-                            colored(env.nb_grps_min, "yellow"),
+                            colored(env.nb_modems_min, "yellow"),
+                            colored(env.nb_groups_min, "yellow"),
                         )
                     )
                     print(
@@ -511,8 +516,8 @@ def run_ppo(
                     )
                     logging.info(
                         "Minimal solution is : {} modems, {} groups\n".format(
-                            colored(env.nb_mod_min, "yellow"),
-                            colored(env.nb_grps_min, "yellow"),
+                            colored(env.nb_modems_min, "yellow"),
+                            colored(env.nb_groups_min, "yellow"),
                         )
                     )
 
@@ -522,8 +527,8 @@ def run_ppo(
             elapsed_time = datetime.now().replace(microsecond=0) - start_time
             if report:
                 reward_per_time_step.append(current_ep_reward)
-                nb_modem_min_time_step.append(env.nb_mod_min)
-                nb_group_min_time_step.append(env.nb_grps_min)
+                nb_modem_min_time_step.append(env.nb_modems_min)
+                nb_group_min_time_step.append(env.nb_groups_min)
                 episodes.append(i_episode)
                 timesteps.append(t)
 
@@ -574,4 +579,4 @@ def run_ppo(
         df_time_step.to_csv(results_dir + "time_step_report.csv", index=False)
     else:
         results_dir = None
-    return env.state_min, env.nb_grps_min, env.nb_mod_min, results_dir
+    return env.state_min, env.nb_groups_min, env.nb_modems_min, results_dir

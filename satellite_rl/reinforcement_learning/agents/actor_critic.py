@@ -76,7 +76,7 @@ class CriticNetwork(nn.Module):
 
 
 def sample_action(
-    actor: ActorNetwork, env: SquareSatelliteEnv
+    actor: ActorNetwork, env: SatelliteEnv
 ) -> tuple[torch.Tensor, torch.Tensor, torch.distributions.MultivariateNormal]:
 
     # Scale state
@@ -93,7 +93,7 @@ def sample_action(
     return action, action_clipped, norm_dist
 
 
-def scale_state(env: SquareSatelliteEnv, state: torch.Tensor):
+def scale_state(env: SatelliteEnv, state: torch.Tensor):
     high_state = torch.Tensor(env.high_obs)
     norm_tensor = torch.zeros_like(state)
     norm_tensor[:, 0] = 1 / high_state[0] * torch.ones(norm_tensor.shape[0])
@@ -191,7 +191,12 @@ def run_actor_critic(
 
     #####################################################
 
-    env: SatelliteEnv = SatelliteEnv(links)
+    env: SatelliteEnv = SatelliteEnv(
+        links,
+        nb_groups_init=len(links),
+        nb_modems_init=len(links),
+        nb_modems_per_group=len(links),
+    )
     actor: ActorNetwork = ActorNetwork(obs_size=2 * len(links), action_size=3)
     critic: CriticNetwork = CriticNetwork(obs_size=2 * len(links))
     # Initiliaze loss
@@ -390,7 +395,12 @@ def run_actor_critic(
                         )
                     else:
                         results_dir = None
-                    return env.state_min, env.nb_mod_min, env.nb_grps_min, results_dir
+                    return (
+                        env.state_min,
+                        env.nb_modems_min,
+                        env.nb_groups_min,
+                        results_dir,
+                    )
         except ValueError:
             # Prevent the algorithm from stopping
             # if the loss of the actor becomes too
@@ -427,4 +437,4 @@ def run_actor_critic(
     else:
         results_dir = None
 
-    return env.state_min, env.nb_mod_min, env.nb_grps_min, results_dir
+    return env.state_min, env.nb_modems_min, env.nb_groups_min, results_dir
