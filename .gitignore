@@ -168,3 +168,6 @@ output/
 
 # Cache files
 *.pyc
+
+# Agent Models
+models/

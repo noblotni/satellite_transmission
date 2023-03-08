@@ -130,7 +130,7 @@ class ActorCritic(nn.Module):
 class PPO:
     def __init__(
             self, state_dim: int, action_dim: int, lr_actor: float, lr_critic: float,
-            gamma: float, nb_epochs: int, eps_clip: float
+            gamma: float, nb_epochs: int, eps_clip: float, use_saved_model: bool = False
     ):
         self.gamma: float = gamma
         self.eps_clip: float = eps_clip
@@ -147,7 +147,12 @@ class PPO:
         )
 
         self.policy_old: ActorCritic = ActorCritic(state_dim, action_dim).to(device)
-        self.policy_old.load_state_dict(self.policy.state_dict())
+        # Folder for saved models is different based on the number of parameters
+        pretrained_model_path: str = f"satellite_rl/models/ppo/{state_dim}_{action_dim}.pt"
+        if use_saved_model and os.path.exists(pretrained_model_path):
+            self.load(pretrained_model_path)
+        else:
+            self.policy_old.load_state_dict(self.policy.state_dict())
 
         self.MseLoss: nn.MSELoss = nn.MSELoss()
 
@@ -237,21 +242,18 @@ class PPO:
         # clear buffer
         self.buffer.clear()
 
-    def save(self, checkpoint_path: str) -> None:
+    def save(self, checkpoint_path):
         torch.save(self.policy_old.state_dict(), checkpoint_path)
 
-    def load(self, checkpoint_path: str) -> None:
-        self.policy_old.load_state_dict(
-            torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
-        )
-        self.policy.load_state_dict(
-            torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
-        )
+    def load(self, checkpoint_path):
+        self.policy_old.load_state_dict(torch.load(checkpoint_path))
+        self.policy.load_state_dict(torch.load(checkpoint_path))
 
 
 ################################### Training ###################################
 def run_ppo(links: list[dict], nb_episodes: int = int(3e4),
-            duration_episode: int = 1000, verbose: int = 1) -> tuple[ndarray, int, int]:
+            duration_episode: int = 1000, verbose: int = 1,
+            use_saved_model: bool = False) -> tuple[ndarray, int, int]:
     if verbose == 1:
         print(
             "============================================================================================"
@@ -321,21 +323,17 @@ def run_ppo(links: list[dict], nb_episodes: int = int(3e4),
         print("logging at : " + log_f_name)
     #####################################################
 
-    """################### checkpointing ###################
-    run_num_pretrained = 0      #### change this to prevent overwriting weights in same env_name folder
+    # """################### checkpointing ###################
+    run_num_pretrained = 0  #### change this to prevent overwriting weights in same env_name folder
 
-    directory = "PPO_preTrained"
-    if not os.path.exists(directory):
-          os.makedirs(directory)
+    checkpoint_directory: str = f"satellite_rl/models/ppo"
+    if not os.path.exists(checkpoint_directory):
+        os.makedirs(checkpoint_directory)
 
-    directory = directory + '/' + env_name + '/'
-    if not os.path.exists(directory):
-          os.makedirs(directory)
-
-
-    checkpoint_path = directory + "PPO_{}_{}_{}.pth".format(env_name, random_seed, run_num_pretrained)
-    print("save checkpoint path : " + checkpoint_path)
-    #####################################################"""
+    checkpoint_path = f"{checkpoint_directory}/{state_dim}_{action_dim}.pt"
+    if use_saved_model and verbose == 1:
+        print("save checkpoint path : " + checkpoint_path)
+    #####################################################
 
     ############# print all hyperparameters #############
     if verbose == 1:
@@ -391,7 +389,8 @@ def run_ppo(links: list[dict], nb_episodes: int = int(3e4),
 
     # initialize a PPO agent
     ppo_agent: PPO = PPO(
-        state_dim, action_dim, lr_actor, lr_critic, gamma, nb_epochs, eps_clip
+        state_dim, action_dim, lr_actor, lr_critic, gamma, nb_epochs, eps_clip,
+        use_saved_model
     )
 
     # track total training time
@@ -472,22 +471,27 @@ def run_ppo(links: list[dict], nb_episodes: int = int(3e4),
                     print_running_episodes = 0
 
                 # save model weights
-                if time_step % save_model_freq == 0 and verbose == 1:
-                    print(
-                        "--------------------------------------------------------------------------------------------"
-                    )
-                    print(f"{env.nb_grps_min = }")
-                    print(f"{env.nb_mod_min = }")
-                    # print("saving model at : " + checkpoint_path)
-                    # ppo_agent.save(checkpoint_path)
-                    # print("model saved")
-                    print(
-                        "Elapsed Time  : ",
-                        datetime.now().replace(microsecond=0) - start_time,
-                    )
-                    print(
-                        "--------------------------------------------------------------------------------------------"
-                    )
+                if time_step % save_model_freq == 0:
+                    if verbose == 1:
+                        print(
+                            "--------------------------------------------------------------------------------------------"
+                        )
+                        print(f"{env.nb_grps_min = }")
+                        print(f"{env.nb_mod_min = }")
+                        print(
+                            "Elapsed Time  : ",
+                            datetime.now().replace(microsecond=0) - start_time,
+                        )
+                    if use_saved_model:
+                        if verbose == 1:
+                            print("saving model at : " + checkpoint_path)
+                        ppo_agent.save(checkpoint_path)
+                        if verbose == 1:
+                            print("model saved")
+                    if verbose == 1:
+                        print(
+                            "--------------------------------------------------------------------------------------------"
+                        )
 
                 # break; if the episode is over
                 if done:

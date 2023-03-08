@@ -20,6 +20,7 @@ torch = [{ markers = "sys_platform == 'macos'", url = "https://download.pytorch.
 gymnasium = "^0.27.1"
 pandas = "^1.5.3"
 termcolor = "^2.2.0"
+tqdm = "^4.65.0"
 
 
 [build-system]
@@ -32,3 +33,4 @@ generate_easy_instances = "satellite_rl.generate_easy_instances:main"
 generate_random_instances = "satellite_rl.generate_random_instances:main"
 analyze_actor_critic = "satellite_rl.analyze_actor_critic:main"
 main = "satellite_rl.main:main"
+train = "satellite_rl.train:main"
