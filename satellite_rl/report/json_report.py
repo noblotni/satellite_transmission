@@ -17,8 +17,8 @@ def generate_solution_report(state: np.ndarray, links: list, output_path: Path) 
     # store in the JSON file
     json_report: dict = {"groups": {}, "nb_groups": 0, "nb_modems": 0}
     for link_ind, coord in enumerate(state):
-        group_key: str = "group_{}".format(coord[0])
-        if group_key not in json_report["groups"].keys():
+        group_key = f"group_{coord[0]}"
+        if not group_key in json_report["groups"].keys():
             json_report["groups"][group_key]: dict = {
                 "links": [],
                 "nb_links": 0,
@@ -50,7 +50,7 @@ def generate_solution_report(state: np.ndarray, links: list, output_path: Path) 
 
 
 def generate_modem_report(
-        json_report: dict, modem_indice: int, group_key: str, link_ind: int, links: list
+    json_report: dict, modem_indice: int, group_key: str, link_ind: int, links: list
 ) -> dict:
     modem_key: str = "modem_{}".format(modem_indice)
     if modem_key not in json_report["groups"][group_key]["modems"].keys():
