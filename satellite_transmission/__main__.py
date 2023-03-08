@@ -13,18 +13,20 @@ def main(args):
     with open(args.links_path, "r") as file:
         links = json.load(file)
 
-    verbose = 0 if args.nb_repeat > 1 else 1
+    verbose = args.verbose
+    if verbose == -1:
+        verbose = 0 if args.nb_repeat > 1 else 1
 
     print(f"Running {args.algo} algorithm...") if args.algo != "compare" else print("Running Actor-Critic and PPO algorithms...")
     print("=========================================")
     if args.nb_repeat > 1 or args.algo == "compare":
         print(f"Running {args.nb_repeat} times...")
-        state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, args.duration_episode, args.nb_repeat, args.timeout, verbose)
+        state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.nb_repeat, args.timeout, verbose)
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min = run_actor_critic(links, args.nb_episodes, args.duration_episode, args.timeout, verbose)
+            state_min, nb_grps_min, nb_mod_min = run_actor_critic(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose)
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min = run_ppo(links, args.nb_episodes, args.duration_episode, args.timeout, verbose)
+            state_min, nb_grps_min, nb_mod_min = run_ppo(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose)
         else:
             raise ValueError("Unknown algorithm.")
         print("=========================================")
@@ -53,9 +55,14 @@ if __name__ == "__main__":
         default="actor-critic",
     )
     parser.add_argument("--nb_episodes", help="Number of episodes.", type=int, default=10)
+    parser.add_argument("--nb_timesteps", help="Number of timesteps", type=int, default=10000)
     parser.add_argument("--timeout", help="Time out (seconds).", type=int, default=0)
-    parser.add_argument("--duration_episode", help="Duration of an episode.", type=int, default=10000)
-    parser.add_argument("--output_path", "-o", help="Path to the output JSON file.", type=Path, default="./state_min.json")
     parser.add_argument("--nb_repeat", help="Number of times to repeat the optimization.", type=int, default=1)
+
+    parser.add_argument("--output_path", "-o", help="Path to the output JSON file.", type=Path, default="./state_min.json")
+    parser.add_argument("--verbose", help="Time out (seconds).", type=int, default=-1)
+    parser.add_argument("--print_freq", help="Print frequency.", type=int, default=1000)
+    parser.add_argument("--log_freq", help="Log frequency.", type=int, default=1000)
+
     args = parser.parse_args()
     main(args)

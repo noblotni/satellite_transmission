@@ -6,11 +6,10 @@ import torch
 import torch.nn as nn
 import logging
 from satellite_transmission.environment import SatelliteEnv
-
+from termcolor import colored
 
 logging.basicConfig(level=logging.INFO)
 
-# =========================== Hyperparameters ===========================
 ################################## set device ##################################
 # set device to cpu or cuda
 device = torch.device("cpu")
@@ -18,13 +17,18 @@ if torch.cuda.is_available():
     device = torch.device("cuda:0")
     torch.cuda.empty_cache()
 
+################################## Hyperparameters ##################################
 # NN layers
-HIDDEN_SIZE = 256
+HIDDEN_SIZE = 128
 # Discount factor
 GAMMA = 0.99
 # Learning rates
-LR_ACTOR = 0.0001
+LR_ACTOR = 0.00001
 LR_CRITIC = 0.0001
+# Environment parameters
+K_EPOCHS = 5  # update policy for K epochs in one PPO update
+EPS_CLIP = 0.2  # clip parameter for PPO
+RANDOM_SEED = 0  # set random seed if required (0 = no random seed)
 
 
 ################################## PPO Policy ##################################
@@ -80,9 +84,6 @@ class ActorCritic(nn.Module):
         )
         action = norm_dist.sample()
 
-        """dist = Categorical(action_probs)
-        action = dist.sample()"""
-
         action_logprob = norm_dist.log_prob(action)
         state_val = self.critic(torch.transpose(state, 0, 1))[0]
 
@@ -123,19 +124,19 @@ class ActorCritic(nn.Module):
 
 class PPO:
     def __init__(
-        self, state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip
+        self, state_dim, action_dim
     ):
-        self.gamma = gamma
-        self.eps_clip = eps_clip
-        self.K_epochs = K_epochs
+        self.gamma = GAMMA
+        self.eps_clip = EPS_CLIP
+        self.K_epochs = K_EPOCHS
 
         self.buffer = RolloutBuffer()
 
         self.policy = ActorCritic(state_dim, action_dim).to(device)
         self.optimizer = torch.optim.Adam(
             [
-                {"params": self.policy.actor.parameters(), "lr": lr_actor},
-                {"params": self.policy.critic.parameters(), "lr": lr_critic},
+                {"params": self.policy.actor.parameters(), "lr": LR_ACTOR},
+                {"params": self.policy.critic.parameters(), "lr": LR_CRITIC},
             ]
         )
 
@@ -243,9 +244,9 @@ class PPO:
 
 
 ################################### Training ###################################
-def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, verbose: int):
-
-    if verbose==1:
+def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int):
+    print(f"{timeout=}")
+    if verbose==2:
         print(
             "============================================================================================"
         )
@@ -265,37 +266,19 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, 
     env_name = "SatelliteEnv"
 
     max_ep_len = duration_episode  # max timesteps in one episode
+    update_timestep = max_ep_len * 4  # update policy every n timesteps
+
     max_training_timesteps = (
         nb_episodes  # break training loop if timeteps > max_training_timesteps
     )
 
-    print_freq = max_ep_len * 2  # print avg reward in the interval (in num timesteps)
-    log_freq = max_ep_len * 2  # log avg reward in the interval (in num timesteps)
-    save_model_freq = int(1000)  # save model frequency (in num timesteps)
     #####################################################
-
-    ## Note : print/log frequencies should be > than max_ep_len
-
-    ################ PPO hyperparameters ################
-    update_timestep = max_ep_len * 4  # update policy every n timesteps
-    K_epochs = 5  # update policy for K epochs in one PPO update
-
-    eps_clip = 0.2  # clip parameter for PPO
-    gamma = 0.99  # discount factor
-
-    lr_actor = 0.0003  # learning rate for actor network
-    lr_critic = 0.001  # learning rate for critic network
-
-    random_seed = 0  # set random seed if required (0 = no random seed)
-    #####################################################
-
-    if verbose==1:
+    if verbose==2:
         ("training environment name : " + env_name)
     env = SatelliteEnv(links)
 
     # state space dimension
     state_dim = env.observation_space.shape[0]
-
     # action space dimension
     action_dim = env.action_space.shape[0]
 
@@ -317,41 +300,25 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, 
     #### create new log file for each run
     log_f_name = log_dir + "/PPO_" + env_name + "_log_" + str(run_num) + ".csv"
 
-    if verbose==1:
+    if verbose==2:
         print("current logging run number for " + env_name + " : ", run_num)
         print("logging at : " + log_f_name)
     #####################################################
 
-    """################### checkpointing ###################
-    run_num_pretrained = 0      #### change this to prevent overwriting weights in same env_name folder
-
-    directory = "PPO_preTrained"
-    if not os.path.exists(directory):
-          os.makedirs(directory)
-
-    directory = directory + '/' + env_name + '/'
-    if not os.path.exists(directory):
-          os.makedirs(directory)
-
-
-    checkpoint_path = directory + "PPO_{}_{}_{}.pth".format(env_name, random_seed, run_num_pretrained)
-    print("save checkpoint path : " + checkpoint_path)
-    #####################################################"""
-
     ############# print all hyperparameters #############
-    if verbose==1:
+    if verbose==2:
         print(
             "--------------------------------------------------------------------------------------------"
         )
         print("max training timesteps : ", max_training_timesteps)
         print("max timesteps per episode : ", max_ep_len)
-        print("model saving frequency : " + str(save_model_freq) + " timesteps")
         print("log frequency : " + str(log_freq) + " timesteps")
         print(
             "printing average reward over episodes in last : "
             + str(print_freq)
             + " timesteps"
         )
+        print("timeout : " + str(timeout) + " seconds")
         print(
             "--------------------------------------------------------------------------------------------"
         )
@@ -365,25 +332,26 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, 
             "--------------------------------------------------------------------------------------------"
         )
         print("PPO update frequency : " + str(update_timestep) + " timesteps")
-        print("PPO K epochs : ", K_epochs)
-        print("PPO epsilon clip : ", eps_clip)
-        print("discount factor (gamma) : ", gamma)
+        print("PPO K epochs : ", K_EPOCHS)
+        print("PPO epsilon clip : ", EPS_CLIP)
+        print("discount factor (gamma) : ", GAMMA)
         print(
             "--------------------------------------------------------------------------------------------"
         )
-        print("optimizer learning rate actor : ", lr_actor)
-        print("optimizer learning rate critic : ", lr_critic)
-    if random_seed:
-        if verbose==1:
+        print("optimizer learning rate actor : ", LR_ACTOR)
+        print("optimizer learning rate critic : ", LR_CRITIC)
+
+    if RANDOM_SEED:
+        if verbose==2:
             print(
                 "--------------------------------------------------------------------------------------------"
             )
-            print("setting random seed to ", random_seed)
-        torch.manual_seed(random_seed)
-        env.seed(random_seed)
-        np.random.seed(random_seed)
+            print("setting random seed to ", RANDOM_SEED)
+        torch.manual_seed(RANDOM_SEED)
+        env.seed(RANDOM_SEED)
+        np.random.seed(RANDOM_SEED)
     #####################################################
-    if verbose == 1:
+    if verbose == 2:
         print(
             "============================================================================================"
         )
@@ -392,12 +360,12 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, 
 
     # initialize a PPO agent
     ppo_agent = PPO(
-        state_dim, action_dim, lr_actor, lr_critic, gamma, K_epochs, eps_clip
+        state_dim, action_dim
     )
 
     # track total training time
     start_time = datetime.now().replace(microsecond=0)
-    if verbose==1:
+    if verbose==2:
         print("Started training at (GMT) : ", start_time)
 
         print(
@@ -454,40 +422,59 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, 
                 log_running_reward = 0
                 log_running_episodes = 0
 
+            print_running_reward += current_ep_reward
+            print_running_episodes += 1
+
+            log_running_reward += current_ep_reward
+            log_running_episodes += 1
+
             # printing average reward
             if time_step % print_freq == 0:
-
                 # print average reward till last episode
                 print_avg_reward = print_running_reward / print_running_episodes
                 print_avg_reward = round(print_avg_reward, 2)
 
-                if verbose==1:
+                if verbose==2:
                     print(
-                        "Episode : {} \t\t Timestep : {} \t\t Average Reward : {}".format(
-                            i_episode, time_step, print_avg_reward
+                        "--------------------------------------------------------------------------------------------"
+                    )
+                    print(
+                        "Episode : {} \t\t Timestep : {} \t\t Elapsed time: {}s".format(
+                            colored(i_episode,"blue"), colored(time_step,"blue"), colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue")
+                        )
+                    )
+                    print(
+                        "Cumulated reward: {}, Average reward: {}".format(
+                                                                         colored(round(print_running_reward,2),"green"),
+                                                                         colored(round(print_avg_reward,2),"green")
+                                                                        )
+                    )
+                    print("Minimal solution is : {} modems, {} groups".format(
+                            colored(env.nb_mod_min,"yellow"), colored(env.nb_grps_min,"yellow")
+                        )
+                    )
+                    print(
+                        "--------------------------------------------------------------------------------------------"
+                    )
+                elif verbose == 1:
+                    logging.info(
+                        "Episode: {}, Timestep: {}, Elapsed time: {}s".format(colored(i_episode,"blue"), colored(time_step,"blue"),colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue"))
+                    )
+                    logging.info(
+                        "Cumulated reward: {}, Average reward: {}".format(
+                                                                         colored(round(print_running_reward,2),"green"),
+                                                                         colored(round(print_avg_reward,2),"green")
+                                                                        )
+                    )
+                    logging.info(
+                        "Minimal solution is : {} modems, {} groups\n".format(
+                            colored(env.nb_mod_min,"yellow"), colored(env.nb_grps_min,"yellow")
                         )
                     )
 
                 print_running_reward = 0
                 print_running_episodes = 0
-
-            # save model weights
-            if time_step % save_model_freq == 0 and verbose==1:
-                print(
-                    "--------------------------------------------------------------------------------------------"
-                )
-                print(f"{env.nb_grps_min = }")
-                print(f"{env.nb_mod_min = }")
-                # print("saving model at : " + checkpoint_path)
-                # ppo_agent.save(checkpoint_path)
-                # print("model saved")
-                print(
-                    "Elapsed Time  : ",
-                    datetime.now().replace(microsecond=0) - start_time,
-                )
-                print(
-                    "--------------------------------------------------------------------------------------------"
-                )
+                
 
             # break; if the episode is over
             elapsed_time = datetime.now().replace(microsecond=0) - start_time
@@ -495,24 +482,22 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, timeout: int, 
                 break
         
         if elapsed_time.seconds > timeout and timeout != 0:
-            if verbose==1:
+            if verbose==2:
                 print("============================================================================================")
                 print("TIMEOUT REACHED")
                 print("============================================================================================")
+            elif verbose==1:
+                logging.info("Timeout reached, stopping the algorithm")
             break
 
-        print_running_reward += current_ep_reward
-        print_running_episodes += 1
-
-        log_running_reward += current_ep_reward
-        log_running_episodes += 1
+        
 
         i_episode += 1
 
     log_f.close()
     env.close()
 
-    if verbose==1:
+    if verbose==2:
         # print total training time
         print(
             "============================================================================================"
