@@ -1,6 +1,7 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
 import os
 import numpy as np
+import pandas as pd
 from datetime import datetime
 import torch
 import torch.nn as nn
@@ -243,9 +244,16 @@ class PPO:
         )
 
 
-################################### Training ###################################
-def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int):
-    print(f"{timeout=}")
+def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int, report: bool):
+    ### report variables ####
+    if report:
+        reward_per_time_step = []
+        nb_modem_min_time_step = []
+        nb_group_min_time_step = []
+        episodes = []
+        timesteps = []
+
+    ### initialize environment hyperparameters ######
     if verbose==2:
         print(
             "============================================================================================"
@@ -282,6 +290,26 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
     # action space dimension
     action_dim = env.action_space.shape[0]
 
+    ###################### report ######################
+    if report:   
+        results_dir = "PPO_Results"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
+        results_dir = results_dir + "/" + env_name + "/"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
+        date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        date = date.replace("/", "_")
+        date = date.replace(":", "_")
+        date = date.replace(" ", "_")
+
+        results_dir = results_dir + "/" + date + "/"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+    #####################################################
+
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
     log_dir = "PPO_logs"
@@ -293,15 +321,16 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
         os.makedirs(log_dir)
 
     #### get number of log files in log directory
-    run_num = 0
-    current_num_files = next(os.walk(log_dir))[2]
-    run_num = len(current_num_files)
+    date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    date = date.replace("/", "_")
+    date = date.replace(":", "_")
+    date = date.replace(" ", "_")
 
     #### create new log file for each run
-    log_f_name = log_dir + "/PPO_" + env_name + "_log_" + str(run_num) + ".csv"
+    log_f_name = log_dir + "/PPO_" + env_name + "_log_" + str(date) + ".csv"
 
     if verbose==2:
-        print("current logging run number for " + env_name + " : ", run_num)
+        print("current logging run number for " + env_name + " : ", date)
         print("logging at : " + log_f_name)
     #####################################################
 
@@ -385,7 +414,6 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
 
     time_step = 0
     i_episode = 0
-
     # training loop
     while time_step <= max_training_timesteps:
 
@@ -408,6 +436,12 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
             # update PPO agent
             if time_step % update_timestep == 0:
                 ppo_agent.update()
+            
+            print_running_reward += current_ep_reward
+            print_running_episodes += 1
+
+            log_running_reward += current_ep_reward
+            log_running_episodes += 1
 
             # log in logging file
             if time_step % log_freq == 0:
@@ -416,17 +450,11 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                 log_avg_reward = log_running_reward / log_running_episodes
                 log_avg_reward = round(log_avg_reward, 4)
 
-                log_f.write("{},{},{}\n".format(i_episode, time_step, log_avg_reward))
+                log_f.write("{},{},{}\n".format(t, time_step, log_avg_reward))
                 log_f.flush()
 
                 log_running_reward = 0
                 log_running_episodes = 0
-
-            print_running_reward += current_ep_reward
-            print_running_episodes += 1
-
-            log_running_reward += current_ep_reward
-            log_running_episodes += 1
 
             # printing average reward
             if time_step % print_freq == 0:
@@ -440,7 +468,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                     )
                     print(
                         "Episode : {} \t\t Timestep : {} \t\t Elapsed time: {}s".format(
-                            colored(i_episode,"blue"), colored(time_step,"blue"), colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue")
+                            colored(i_episode,"blue"), colored(t,"blue"), colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue")
                         )
                     )
                     print(
@@ -458,7 +486,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                     )
                 elif verbose == 1:
                     logging.info(
-                        "Episode: {}, Timestep: {}, Elapsed time: {}s".format(colored(i_episode,"blue"), colored(time_step,"blue"),colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue"))
+                        "Episode: {}, Timestep: {}, Elapsed time: {}s".format(colored(i_episode,"blue"), colored(t,"blue"),colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue"))
                     )
                     logging.info(
                         "Cumulated reward: {}, Average reward: {}".format(
@@ -474,10 +502,16 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
 
                 print_running_reward = 0
                 print_running_episodes = 0
-                
+            
+            elapsed_time = datetime.now().replace(microsecond=0) - start_time
+            if report:
+                reward_per_time_step.append(current_ep_reward)
+                nb_modem_min_time_step.append(env.nb_mod_min)
+                nb_group_min_time_step.append(env.nb_grps_min)
+                episodes.append(i_episode)
+                timesteps.append(t)
 
             # break; if the episode is over
-            elapsed_time = datetime.now().replace(microsecond=0) - start_time
             if done or (elapsed_time.seconds > timeout and timeout != 0):
                 break
         
@@ -489,11 +523,8 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
             elif verbose==1:
                 logging.info("Timeout reached, stopping the algorithm")
             break
-
         
-
-        i_episode += 1
-
+        i_episode+=1
     log_f.close()
     env.close()
 
@@ -510,4 +541,17 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
             "============================================================================================"
         )
 
-    return env.state_min, env.nb_grps_min, env.nb_mod_min
+    if report:
+        df_time_step = pd.DataFrame(
+            {
+                "episode": episodes,
+                "timestep": timesteps,
+                "reward": reward_per_time_step,
+                "nb_modem_min": nb_modem_min_time_step,
+                "nb_group_min": nb_group_min_time_step,
+            }
+        )
+        df_time_step.to_csv(results_dir+"time_step_report.csv", index=False)
+    else:
+        results_dir = None
+    return env.state_min, env.nb_grps_min, env.nb_mod_min, results_dir

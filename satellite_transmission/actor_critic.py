@@ -8,6 +8,7 @@ import satellite_transmission.config as config
 import logging
 from datetime import datetime
 import numpy as np
+import pandas as pd
 from termcolor import colored
 
 logging.basicConfig(level=logging.INFO)
@@ -79,7 +80,7 @@ def sample_action(actor: ActorNetwork, env: SatelliteEnv):
     return action, action_clipped, norm_dist
 
 
-def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int):
+def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int, report: bool):
     """Run the actor-critic algorithm to solve the optimization problem.
 
     Args:
@@ -92,6 +93,12 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
         nb_mod_min (int): the number of modems in the minimal state
         nb_grps_min (int): the number of groups in the minimal group
     """
+    if report:
+        reward_per_time_step = []
+        timesteps = []
+        nb_modem_min_time_step = []
+        nb_group_min_time_step = []
+        episodes = []
 
     if verbose==2:
         print(
@@ -109,10 +116,29 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
         print(
             "============================================================================================"
         )
+    env_name = "SatelliteEnv"
+    ###################### report ######################
+    if report:   
+        results_dir = "actor-critic_Results"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
+        results_dir = results_dir + "/" + env_name + "/"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
+        date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        date = date.replace("/", "_")
+        date = date.replace(":", "_")
+        date = date.replace(" ", "_")
+
+        results_dir = results_dir + "/" + date + "/"
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+    #####################################################
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    env_name = "SatelliteEnv"
     log_dir = "actor_critic_logs"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -122,19 +148,20 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
         os.makedirs(log_dir)
 
     #### get number of log files in log directory
-    run_num = 0
-    current_num_files = next(os.walk(log_dir))[2]
-    run_num = len(current_num_files)
+    date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    date = date.replace("/", "_")
+    date = date.replace(":", "_")
+    date = date.replace(" ", "_")
 
     #### create new log file for each run
-    log_f_name = log_dir + "/actor_critic_" + env_name + "_log_" + str(run_num) + ".csv"
+    log_f_name = log_dir + "/actor_critic_" + env_name + "_log_" + str(date) + ".csv"
 
     # logging file
     log_f = open(log_f_name, "w+")
     log_f.write("episode,timestep,reward\n")
 
     if verbose==2:
-        print("current logging run number for " + env_name + " : ", run_num)
+        print("current logging run number for " + env_name + " : ", date)
         print("logging at : " + log_f_name)
         
     #####################################################
@@ -207,7 +234,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
         print(
             "============================================================================================"
         )
-    for nb_ep in range(nb_episodes):
+    for i_ep in range(nb_episodes):
         env.reset()
         cumulated_reward = 0
         try:
@@ -234,11 +261,12 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
                 actor_optimizer.step()
                 critic_optimizer.step()
                 rewards_list.append(cumulated_reward)
+                elapsed_time = datetime.now().replace(microsecond=0) - start_time
                 # Logs
                 if j % print_freq == 0:
                     if verbose == 1:
                         logging.info(
-                            "Episode: {}, Timestep: {}, Elapsed time: {}s".format(colored(nb_ep,"blue"), colored(j,"blue"),colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue"))
+                            "Episode: {}, Timestep: {}, Elapsed time: {}s".format(colored(i_ep,"blue"), colored(j,"blue"),colored(elapsed_time.seconds,"blue"))
                         )
                         logging.info(
                             "Cumulated reward: {}, Average reward: {}".format(
@@ -257,7 +285,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
                         )
                         print(
                             "Episode : {} \t\t Timestep : {} \t\t Elapsed time: {}s".format(
-                                colored(nb_ep,"blue"), colored(j,"blue"),colored((datetime.now().replace(microsecond=0) - start_time).seconds,"blue")
+                                colored(i_ep,"blue"), colored(j,"blue"),colored(elapsed_time.seconds,"blue")
                             )
                         )
                         print(
@@ -275,8 +303,16 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
                         )
 
                 if j % log_freq == 0:
-                    log_f.write("{},{},{}\n".format(nb_ep, j, cumulated_reward))
+                    log_f.write("{},{},{}\n".format(i_ep, j, cumulated_reward))
                     log_f.flush()
+                
+                if report:
+                    reward_per_time_step.append(cumulated_reward)
+                    nb_modem_min_time_step.append(env.nb_mod_min)
+                    nb_group_min_time_step.append(env.nb_grps_min)
+                    episodes.append(i_ep)
+                    timesteps.append(j)
+
 
                 if timeout != 0 and (datetime.now().replace(microsecond=0) - start_time).seconds > timeout:
                     if verbose == 1:
@@ -297,7 +333,20 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
                         print("TIMEOUT REACHED")
                         print("============================================================================================")
                     log_f.close()
-                    return env.state_min, env.nb_mod_min, env.nb_grps_min
+                    if report:
+                        df_time_step = pd.DataFrame(
+                            {
+                                "episode": episodes,
+                                "timestep": timesteps,
+                                "reward": reward_per_time_step,
+                                "nb_modem_min": nb_modem_min_time_step,
+                                "nb_group_min": nb_group_min_time_step,
+                            }
+                        )
+                        df_time_step.to_csv(results_dir+"time_step_report.csv", index=False)
+                    else:
+                        results_dir = None
+                    return env.state_min, env.nb_mod_min, env.nb_grps_min, results_dir
         except ValueError:
             # Prevent the algorithm from stopping
             # if the loss of the actor becomes too
@@ -315,5 +364,23 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int, print
         print(
             "============================================================================================"
         )
+    elif verbose==1:
         logging.info("Training finished")
-    return env.state_min, env.nb_mod_min, env.nb_grps_min
+
+    log_f.close()
+
+    if report:
+        df_time_step = pd.DataFrame(
+            {
+                "episode": episodes,
+                "timestep": timesteps,
+                "reward": reward_per_time_step,
+                "nb_modem_min": nb_modem_min_time_step,
+                "nb_group_min": nb_group_min_time_step,
+            }
+        )
+        df_time_step.to_csv(results_dir+"time_step_report.csv", index=False)
+    else:
+        results_dir = None
+
+    return env.state_min, env.nb_mod_min, env.nb_grps_min, results_dir
