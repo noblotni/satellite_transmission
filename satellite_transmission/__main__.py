@@ -33,9 +33,9 @@ def main(args):
             state_min, nb_grps_min, nb_mod_min, report_paths = batch_comparison(links, args.algo, args.nb_episodes, args.nb_timesteps, args.nb_repeat, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename)
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename)
+            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename, False)
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename)
+            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename, False)
         else:
             raise ValueError("Unknown algorithm.")
         print("=========================================")

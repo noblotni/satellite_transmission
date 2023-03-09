@@ -3,8 +3,12 @@ from satellite_transmission.ppo import run_ppo
 from termcolor import colored
 import numpy as np
 from tqdm import tqdm
+from datetime import datetime
 
 def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, print_freq, log_freq, timeout, verbose, generate_report, filename):
+    print("=========================================")
+    print("Starting at {}".format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+    print("=========================================")
     nb_grps_min_list = []
     nb_mod_min_list = []
     state_min_list = []
