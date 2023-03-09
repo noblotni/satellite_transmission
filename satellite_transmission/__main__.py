@@ -5,16 +5,20 @@ import argparse
 from satellite_transmission.actor_critic import run_actor_critic
 from satellite_transmission.ppo import run_ppo
 from satellite_transmission.json_report import generate_solution_report
-import numpy as np
+import os
 from termcolor import colored
 from satellite_transmission.batch_comparison import batch_comparison
-from satellite_transmission.report_generation import generate_report
+from satellite_transmission.report_generation import generate_report, generate_report_runs, generate_report_comparison
 from datetime import datetime
 
 def main(args):
     with open(args.links_path, "r") as file:
         links = json.load(file)
 
+    filename = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    filename = filename.replace("/", "_")
+    filename = filename.replace(":", "_")
+    filename = filename.replace(" ", "_")
     verbose = args.verbose
     if verbose == -1:
         verbose = 0 if args.nb_repeat > 1 else 1
@@ -23,12 +27,15 @@ def main(args):
     print("=========================================")
     if args.nb_repeat > 1 or args.algo == "compare":
         print(f"Running {args.nb_repeat} times...")
-        state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.nb_repeat, args.timeout, verbose, args.generate_report)
+        if args.algo == "compare":
+            state_min, nb_grps_min, nb_mod_min, results_dir_list_actor, results_dir_list_ppo = batch_comparison(links, args.algo, args.nb_episodes, args.nb_timesteps, args.nb_repeat, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename)
+        else:
+            state_min, nb_grps_min, nb_mod_min, report_paths = batch_comparison(links, args.algo, args.nb_episodes, args.nb_timesteps, args.nb_repeat, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename)
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report)
+            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename)
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report)
+            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(links, args.nb_episodes, args.nb_timesteps, args.print_freq, args.log_freq, args.timeout, verbose, args.generate_report, filename)
         else:
             raise ValueError("Unknown algorithm.")
         print("=========================================")
@@ -46,10 +53,14 @@ def main(args):
     generate_solution_report(
         state=state_min, links=links, output_path=args.output_path
     )
+    print("Solution saved in {}".format(args.output_path))
+    print("=========================================")
+    instance_name = str(args.links_path).split("/")[-1].split(".")[0]
     if args.generate_report:
-        generate_report(report_path + "time_step_report.csv",
-                        report_path + "report.html",
-                        "Actor-Critic" if args.algo == "actor-critic" else "PPO" + " Algorithm",
+        if args.nb_repeat > 1 and args.algo != "compare":
+            generate_report_runs(report_paths,
+                        "/".join(report_paths[0].split("/")[:-2]) + "/report.html",
+                        ("Actor-Critic Algorithm" if args.algo == "actor-critic" else "PPO Algorithm")+ f"\n{instance_name} - {args.nb_repeat} runs",
                         {
                             "Number of episodes": args.nb_episodes,
                             "Number of timesteps": args.nb_timesteps,
@@ -61,6 +72,37 @@ def main(args):
                             "Number of links": len(links)
                         }
         )
+        elif args.algo == "compare":
+            os.makedirs("comparison", exist_ok=True)
+            generate_report_comparison(results_dir_list_actor, results_dir_list_ppo,
+                        f"comparison/report_{args.nb_repeat}_runs_{datetime.now().strftime('%d/%m/%Y %H:%M:%S').replace('/','_').replace(':','_')}.html",
+                        f"Actor-Critic vs PPO Algorithm\n{instance_name} - {args.nb_repeat} runs",
+                        {
+                            "Number of episodes": args.nb_episodes,
+                            "Number of timesteps": args.nb_timesteps,
+                            "Number of runs": args.nb_repeat,
+                            "Time out": args.timeout,
+                            "Number of groups": nb_grps_min,
+                            "Number of modems": nb_mod_min,
+                            "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                            "Number of links": len(links)
+                        }
+        )
+        else:
+            generate_report(report_path + "time_step_report.csv",
+                            report_path + "report.html",
+                            ("Actor-Critic" if args.algo == "actor-critic" else "PPO") + f" Algorithm\n{instance_name} - {args.nb_repeat} runs",
+                            {
+                                "Number of episodes": args.nb_episodes,
+                                "Number of timesteps": args.nb_timesteps,
+                                "Number of runs": args.nb_repeat,
+                                "Time out": args.timeout,
+                                "Number of groups": nb_grps_min,
+                                "Number of modems": nb_mod_min,
+                                "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
+                                "Number of links": len(links)
+                            }
+            )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Run the optimization algorithm.")
