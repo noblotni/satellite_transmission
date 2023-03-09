@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-import config
+from satellite_rl import config
 from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 
 logging.basicConfig(level=logging.INFO)
