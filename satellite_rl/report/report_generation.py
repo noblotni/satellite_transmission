@@ -5,7 +5,7 @@ import os
 import webbrowser
 import numpy as np
 
-def generate_report(csv_file_path, report_path, report_title, params):
+def generate_report(csv_file_path: str, report_path: str, report_title: str, params: dict):
     df = pd.read_csv(csv_file_path)
     df = df.reset_index(drop=True)
 
@@ -76,7 +76,7 @@ def create_graph_lines(dfs, y, title, names=None):
     )
     return fig
 
-def generate_report_runs(list_csv_file_path, report_path, report_title, params):
+def generate_report_runs(list_csv_file_path: list[str], report_path: str, report_title: str, params: dict):
     dfs = [
         pd.read_csv(csv_file_path + "time_step_report.csv").reset_index(drop=True)
         for csv_file_path in list_csv_file_path
@@ -127,7 +127,8 @@ def generate_report_runs(list_csv_file_path, report_path, report_title, params):
     webbrowser.open(os.path.abspath(report_path))
 
 
-def generate_report_comparison(list_csv_file_path_actor, list_csv_file_path_ppo, report_path, report_title, params):
+def generate_report_comparison(list_csv_file_path_actor: list[str], list_csv_file_path_ppo: list[str],
+                               report_path: str, report_title: str, params: dict):
     dfs_actor = [
         pd.read_csv(csv_file_path + "time_step_report.csv").reset_index(drop=True)
         for csv_file_path in list_csv_file_path_actor
