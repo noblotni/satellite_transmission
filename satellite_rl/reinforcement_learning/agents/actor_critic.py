@@ -128,7 +128,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
     env_name = "SatelliteEnv"
     ###################### report ######################
     if report:
-        results_dir = "actor-critic_Results"
+        results_dir = "satellite_rl/output/actor-critic_Results"
         os.makedirs(results_dir, exist_ok=True)
 
         results_dir = results_dir + "/" + env_name + "/"
@@ -147,7 +147,7 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir = "actor_critic_logs"
+    log_dir = "satellite_rl/output/actor_critic_logs"
     os.makedirs(log_dir, exist_ok=True)
 
     log_dir = log_dir + "/" + env_name + "/"

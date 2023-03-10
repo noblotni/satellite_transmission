@@ -290,7 +290,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
 
     ###################### report ######################
     if report:   
-        results_dir = "PPO_Results"
+        results_dir = "satellite_rl/output/PPO_Results"
         os.makedirs(results_dir, exist_ok=True)
 
         results_dir = results_dir + "/" + env_name + "/"
@@ -309,7 +309,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir = "PPO_logs"
+    log_dir = "satellite_rl/output/PPO_logs"
     os.makedirs(log_dir, exist_ok=True)
 
     log_dir = log_dir + "/" + env_name + "/"

@@ -119,7 +119,7 @@ def main() -> None:
     if generate_report_bool:
         if args.nb_repeat > 1 and args.algo != "compare":
             generate_report_runs(report_paths,
-                        "/".join(report_paths[0].split("/")[:-2]) + "/report.html",
+                        "satellite_rl/output/"+"/".join(report_paths[0].split("/")[:-2]) + "/report.html",
                         ("Actor-Critic Algorithm" if args.algo == "actor-critic" else "PPO Algorithm")+ f"\n{instance_name} - {args.nb_repeat} runs",
                         {
                             "Number of episodes": args.nb_episodes,
@@ -133,9 +133,9 @@ def main() -> None:
                         }
         )
         elif args.algo == "compare":
-            os.makedirs("comparison", exist_ok=True)
+            os.makedirs("satellite_rl/output/comparison", exist_ok=True)
             generate_report_comparison(results_dir_list_actor, results_dir_list_ppo,
-                        f"comparison/report_{args.nb_repeat}_runs_{datetime.now().strftime('%d/%m/%Y %H:%M:%S').replace('/','_').replace(':','_')}.html",
+                        "satellite_rl/output/"+f"comparison/report_{args.nb_repeat}_runs_{datetime.now().strftime('%d/%m/%Y %H:%M:%S').replace('/','_').replace(':','_')}.html",
                         f"Actor-Critic vs PPO Algorithm\n{instance_name} - {args.nb_repeat} runs",
                         {
                             "Number of episodes": args.nb_episodes,
