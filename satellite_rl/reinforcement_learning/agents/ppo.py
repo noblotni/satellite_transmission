@@ -276,9 +276,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
     max_ep_len = duration_episode  # max timesteps in one episode
     update_timestep = max_ep_len * 4  # update policy every n timesteps
 
-    max_training_timesteps = (
-        nb_episodes  # break training loop if timeteps > max_training_timesteps
-    )
+    max_training_timesteps = nb_episodes  # break training loop if timeteps > max_training_timesteps
 
     #####################################################
     if verbose==2:
@@ -307,7 +305,6 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
             
             results_dir = results_dir + filename.split("-")[1] + "/"
             os.makedirs(results_dir, exist_ok=True)
-        
     #####################################################
 
     ###################### logging ######################
@@ -371,6 +368,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
         torch.manual_seed(RANDOM_SEED)
         env.seed(RANDOM_SEED)
         np.random.seed(RANDOM_SEED)
+
     #####################################################
     if verbose == 2:
         print(
@@ -440,7 +438,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                 log_avg_reward = log_running_reward / log_running_episodes
                 log_avg_reward = round(log_avg_reward, 4)
 
-                log_f.write("{},{},{}\n".format(i_episode, t, log_avg_reward))
+                log_f.write("{},{},{}\n".format(t, t, log_avg_reward))
                 log_f.flush()
 
                 log_running_reward = 0
@@ -513,6 +511,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
             elif verbose==1:
                 logging.info("Timeout reached, stopping the algorithm")
             break
+        
         i_episode+=1
     log_f.close()
     env.close()

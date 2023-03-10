@@ -1,0 +1,1 @@
+from .json_report import generate_solution_report
