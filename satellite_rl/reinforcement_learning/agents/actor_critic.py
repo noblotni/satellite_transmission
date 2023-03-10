@@ -88,8 +88,8 @@ def sample_action(actor: ActorNetwork, env: SatelliteEnv) -> tuple[
 
 
 def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
-                     print_freq: int, log_freq: int, timeout: int, verbose: int,
-                     report: bool):
+                     print_freq: int, log_freq: int, timeout: int, verbose: int, 
+                     report: bool, filename: str, batch: bool):
     """Run the actor-critic algorithm to solve the optimization problem.
 
     Args:
@@ -128,49 +128,41 @@ def run_actor_critic(links: list, nb_episodes: int, duration_episode: int,
     env_name = "SatelliteEnv"
     ###################### report ######################
     if report:
-        results_dir = "actor-critic_Results"
-        if not os.path.exists(results_dir):
-            os.makedirs(results_dir)
+        results_dir = "satellite_rl/output/actor-critic_Results"
+        os.makedirs(results_dir, exist_ok=True)
 
         results_dir = results_dir + "/" + env_name + "/"
-        if not os.path.exists(results_dir):
-            os.makedirs(results_dir)
+        os.makedirs(results_dir, exist_ok=True)
 
-        date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        date = date.replace("/", "_")
-        date = date.replace(":", "_")
-        date = date.replace(" ", "_")
-
-        results_dir = results_dir + "/" + date + "/"
-        if not os.path.exists(results_dir):
-            os.makedirs(results_dir)
+        if not batch:
+            results_dir = results_dir + filename + "/"
+            os.makedirs(results_dir, exist_ok=True)
+        else:
+            results_dir = results_dir + filename.split("-")[0] + "/"
+            os.makedirs(results_dir, exist_ok=True)
+            
+            results_dir = results_dir + filename.split("-")[1] + "/"
+            os.makedirs(results_dir, exist_ok=True)
     #####################################################
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir = "actor_critic_logs"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
+    log_dir = "satellite_rl/output/actor_critic_logs"
+    os.makedirs(log_dir, exist_ok=True)
 
     log_dir = log_dir + "/" + env_name + "/"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
-    #### get number of log files in log directory
-    date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    date = date.replace("/", "_")
-    date = date.replace(":", "_")
-    date = date.replace(" ", "_")
+    os.makedirs(log_dir, exist_ok=True)
 
     #### create new log file for each run
-    log_f_name = log_dir + "/actor_critic_" + env_name + "_log_" + str(date) + ".csv"
+    log_f_name = log_dir + "actor_critic_" + env_name + "_log_" + filename + ".csv"
 
     # logging file
     log_f = open(log_f_name, "w+")
     log_f.write("episode,timestep,reward\n")
 
-    if verbose == 2:
-        print("current logging run number for " + env_name + " : ", date)
+    if verbose==2:
+        print("current logging run number for " + env_name + " : ", filename)
+
         print("logging at : " + log_f_name)
 
     #####################################################

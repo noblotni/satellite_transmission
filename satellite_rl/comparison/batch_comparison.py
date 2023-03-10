@@ -1,100 +1,152 @@
-import numpy as np
-from termcolor import colored
-
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
 from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
+from termcolor import colored
+import numpy as np
+from tqdm import tqdm
+from datetime import datetime
 
-
-def batch_comparison(links: list, algo: str, nb_episodes: int, duration_episode: int,
-                     nb_repeat: int) -> tuple[int, int, int]:
-    nb_grps_min_list: list[int] = []
-    nb_mod_min_list: list[int] = []
-    state_min_list: list[np.array] = []
+def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, print_freq, log_freq, timeout, verbose, generate_report, filename):
+    print("=========================================")
+    print("Starting at {}".format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
+    print("=========================================")
+    nb_grps_min_list = []
+    nb_mod_min_list = []
+    state_min_list = []
+    results_dir_list = []
 
     if algo == "compare":
-        nb_grps_min_list_actor: list[int] = []
-        nb_mod_min_list_actor: list[int] = []
-        state_min_list_actor: list[np.array] = []
-        nb_grps_min_list_ppo: list[int] = []
-        nb_mod_min_list_ppo: list[int] = []
-        state_min_list_ppo: list[np.array] = []
+        nb_grps_min_list_actor = []
+        nb_mod_min_list_actor = []
+        state_min_list_actor = []
+        results_dir_list_actor = []
+        nb_grps_min_list_ppo = []
+        nb_mod_min_list_ppo = []
+        state_min_list_ppo = []
+        results_dir_list_ppo = []
+        
+    best_ppo = 0
+    best_actor = 0
+    #verbose = 0 if nb_repeat > 1 else 1
 
-    best_ppo: int = 0
-    best_actor: int = 0
-    verbose: int = 0 if nb_repeat > 1 else 1
+    if verbose == 0:
+        for i in tqdm(range(nb_repeat)):
+            if algo == "actor-critic":
+                state_min, nb_grps_min, nb_mod_min, results_dir = run_actor_critic(
+                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True
+                )
+                state_min_list.append(state_min)
+                nb_grps_min_list.append(nb_grps_min)
+                nb_mod_min_list.append(nb_mod_min)
+                results_dir_list.append(results_dir)
 
-    for i in range(nb_repeat):
-        print(f"Repeat {i + 1}/{nb_repeat}...")
-        if algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min = run_actor_critic(
-                links, nb_episodes=nb_episodes, duration_episode=duration_episode,
-                verbose=verbose
-            )
-            state_min_list.append(state_min)
-            nb_grps_min_list.append(nb_grps_min)
-            nb_mod_min_list.append(nb_mod_min)
+            elif algo == "ppo":
+                state_min, nb_grps_min, nb_mod_min, results_dir = run_ppo(
+                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True
+                )
+                state_min_list.append(state_min)
+                nb_grps_min_list.append(nb_grps_min)
+                nb_mod_min_list.append(nb_mod_min)
+                results_dir_list.append(results_dir)
 
-        elif algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min = run_ppo(
-                links, nb_episodes=nb_episodes, duration_episode=duration_episode,
-                verbose=verbose
-            )
-            state_min_list.append(state_min)
-            nb_grps_min_list.append(nb_grps_min)
-            nb_mod_min_list.append(nb_mod_min)
+            elif algo == "compare":
+                state_min_actor, nb_grps_min_actor, nb_mod_min_actor, results_dir_actor = run_actor_critic(
+                    links, nb_episodes=nb_episodes, duration_episode=1000, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i)+"_actor", batch=True
+                )
+                state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo, results_dir_ppo = run_ppo(
+                    links, nb_episodes=nb_episodes, duration_episode=13000, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i)+"_ppo", batch=True
+                )
+                nb_grps_min_list_actor.append(nb_grps_min_actor)
+                nb_mod_min_list_actor.append(nb_mod_min_actor)
+                state_min_list_actor.append(state_min_actor)
+                results_dir_list_actor.append(results_dir_actor)
 
-        elif algo == "compare":
-            print('Actor-Critic...')
-            state_min_actor, nb_grps_min_actor, nb_mod_min_actor = run_actor_critic(
-                links, nb_episodes=nb_episodes, duration_episode=1000, verbose=verbose
-            )
-            print('PPO...')
-            state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo = run_ppo(
-                links, nb_episodes=nb_episodes, duration_episode=13000, verbose=verbose
-            )
-            nb_grps_min_list_actor.append(nb_grps_min_actor)
-            nb_mod_min_list_actor.append(nb_mod_min_actor)
-            state_min_list_actor.append(state_min_actor)
+                nb_grps_min_list_ppo.append(nb_grps_min_ppo)
+                nb_mod_min_list_ppo.append(nb_mod_min_ppo)
+                state_min_list_ppo.append(state_min_ppo)
+                results_dir_list_ppo.append(results_dir_ppo)
 
-            nb_grps_min_list_ppo.append(nb_grps_min_ppo)
-            nb_mod_min_list_ppo.append(nb_mod_min_ppo)
-            state_min_list_ppo.append(state_min_ppo)
+                if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
+                    best_ppo += 1
+                else:
+                    best_actor += 1
+    else:
+        for i in range(nb_repeat):
+            print(f"Repeat {i+1}/{nb_repeat}...")
+            if algo == "actor-critic":
+                state_min, nb_grps_min, nb_mod_min, results_dir = run_actor_critic(
+                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True
+                )
+                state_min_list.append(state_min)
+                nb_grps_min_list.append(nb_grps_min)
+                nb_mod_min_list.append(nb_mod_min)
+                results_dir_list.append(results_dir)
 
-            if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
-                best_ppo += 1
-            else:
-                best_actor += 1
+            elif algo == "ppo":
+                state_min, nb_grps_min, nb_mod_min, results_dir = run_ppo(
+                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True
+                )
+                state_min_list.append(state_min)
+                nb_grps_min_list.append(nb_grps_min)
+                nb_mod_min_list.append(nb_mod_min)
+                results_dir_list.append(results_dir)
+
+            elif algo == "compare":
+                print('Actor-Critic...')
+                state_min_actor, nb_grps_min_actor, nb_mod_min_actor, results_dir_actor = run_actor_critic(
+                    links, nb_episodes=nb_episodes, duration_episode=1000, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i)+"_actor", batch=True
+                )
+                print('PPO...')
+                state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo, results_dir_ppo = run_ppo(
+                    links, nb_episodes=nb_episodes, duration_episode=13000, print_freq=print_freq,  
+                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i)+"_ppo", batch=True
+                )
+                nb_grps_min_list_actor.append(nb_grps_min_actor)
+                nb_mod_min_list_actor.append(nb_mod_min_actor)
+                state_min_list_actor.append(state_min_actor)
+                results_dir_list_actor.append(results_dir_actor)
+
+                nb_grps_min_list_ppo.append(nb_grps_min_ppo)
+                nb_mod_min_list_ppo.append(nb_mod_min_ppo)
+                state_min_list_ppo.append(state_min_ppo)
+                results_dir_list_ppo.append(results_dir_ppo)
+
+                if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
+                    best_ppo += 1
+                else:
+                    best_actor += 1
 
     print("=========================================")
     print("RESULTS")
     print("=========================================")
     if algo == "compare":
-        print(colored("COMPARISON BETWEEN PPO AND ACTOR-CRITIC", "blue"))
+        print(colored("COMPARISON BETWEEN PPO AND ACTOR-CRITIC","blue"))
         print("=========================================")
         if best_ppo > best_actor:
-            print(colored("PPO", "green"), "is better most of the times",
-                  colored(f"{best_ppo = }", "green"),
-                  colored(f"{best_actor = }", "red"))
+            print(colored("PPO","green"),"is better most of the times", colored(f"{best_ppo = }","green"), colored(f"{best_actor = }","red"))
         else:
-            print(colored("Actor-Critic", "green"), "is better most of the times",
-                  colored(f"{best_actor = }", "green"),
-                  colored(f"{best_ppo = }", "red"))
+            print(colored("Actor-Critic","green"),"is better most of the times", colored(f"{best_actor = }","green"), colored(f"{best_ppo = }","red"))
+        
+        nb_grps_min_list_ppo = np.array(nb_grps_min_list_ppo)
+        nb_mod_min_list_ppo = np.array(nb_mod_min_list_ppo)
+        nb_grps_min_list_actor = np.array(nb_grps_min_list_actor)
+        nb_mod_min_list_actor = np.array(nb_mod_min_list_actor)
 
-        nb_grps_min_list_ppo: np.ndarray = np.array(nb_grps_min_list_ppo)
-        nb_mod_min_list_ppo: np.ndarray = np.array(nb_mod_min_list_ppo)
-        nb_grps_min_list_actor: np.ndarray = np.array(nb_grps_min_list_actor)
-        nb_mod_min_list_actor: np.ndarray = np.array(nb_mod_min_list_actor)
+        best_ppo_index = np.argmin(nb_grps_min_list_ppo + nb_mod_min_list_ppo)
+        state_min_ppo = state_min_list_ppo[best_ppo_index]
+        nb_grps_min_ppo = nb_grps_min_list_ppo[best_ppo_index]
+        nb_mod_min_ppo = nb_mod_min_list_ppo[best_ppo_index]
 
-        best_ppo_index: int = np.argmin(nb_grps_min_list_ppo + nb_mod_min_list_ppo)
-        state_min_ppo: np.ndarray = state_min_list_ppo[best_ppo_index]
-        nb_grps_min_ppo: int = nb_grps_min_list_ppo[best_ppo_index]
-        nb_mod_min_ppo: int = nb_mod_min_list_ppo[best_ppo_index]
-
-        best_actor_index: int = np.argmin(
-            nb_grps_min_list_actor + nb_mod_min_list_actor)
-        state_min_actor: np.ndarray = state_min_list_actor[best_actor_index]
-        nb_grps_min_actor: int = nb_grps_min_list_actor[best_actor_index]
-        nb_mod_min_actor: int = nb_mod_min_list_actor[best_actor_index]
+        best_actor_index = np.argmin(nb_grps_min_list_actor + nb_mod_min_list_actor)
+        state_min_actor = state_min_list_actor[best_actor_index]
+        nb_grps_min_actor = nb_grps_min_list_actor[best_actor_index]
+        nb_mod_min_actor = nb_mod_min_list_actor[best_actor_index]
 
         print(colored("Best PPO solution:", "blue"))
         print(f"nb_grps_min_ppo={colored(nb_grps_min_ppo, 'yellow')}")
@@ -106,19 +158,22 @@ def batch_comparison(links: list, algo: str, nb_episodes: int, duration_episode:
 
         print("=========================================")
         if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
-            print(colored("PPO", "green"), "found the best solution")
-            state_min: np.ndarray = state_min_ppo
-            nb_grps_min: int = nb_grps_min_ppo
-            nb_mod_min: int = nb_mod_min_ppo
+            print(colored("PPO","green"), "found the best solution")
+            state_min = state_min_ppo
+            nb_grps_min = nb_grps_min_ppo
+            nb_mod_min = nb_mod_min_ppo
         else:
-            print(colored("Actor-Critic", "green"), "found the best solution")
-            state_min: np.ndarray = state_min_actor
-            nb_grps_min: int = nb_grps_min_actor
-            nb_mod_min: int = nb_mod_min_actor
+            print(colored("Actor-Critic","green"), "found the best solution")
+            state_min = state_min_actor
+            nb_grps_min = nb_grps_min_actor
+            nb_mod_min = nb_mod_min_actor
     else:
-        best_index: int = np.argmin(nb_grps_min_list + nb_grps_min_list)
-        state_min: np.ndarray = state_min_list[best_index]
-        nb_grps_min: int = nb_grps_min_list[best_index]
-        nb_mod_min: int = nb_mod_min_list[best_index]
+        best_index = np.argmin(nb_grps_min_list + nb_grps_min_list)
+        state_min = state_min_list[best_index]
+        nb_grps_min = nb_grps_min_list[best_index]
+        nb_mod_min = nb_mod_min_list[best_index]
 
-    return state_min, nb_grps_min, nb_mod_min
+    if algo == 'ppo' or algo == 'actor-critic':
+        return state_min, nb_grps_min, nb_mod_min, results_dir_list
+    else:
+        return state_min, nb_grps_min, nb_mod_min, results_dir_list_actor, results_dir_list_ppo
