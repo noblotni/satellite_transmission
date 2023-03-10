@@ -6,7 +6,7 @@ from datetime import datetime
 import torch
 import torch.nn as nn
 import logging
-from satellite_transmission.environment import SatelliteEnv
+from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 from termcolor import colored
 
 logging.basicConfig(level=logging.INFO)

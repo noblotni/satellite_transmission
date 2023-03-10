@@ -20,6 +20,8 @@ torch = [{ markers = "sys_platform == 'macos'", url = "https://download.pytorch.
 gymnasium = "^0.27.1"
 pandas = "^1.5.3"
 termcolor = "^2.2.0"
+tqdm = "^4.65.0"
+plotly = "^5.13.1"
 
 
 [build-system]
