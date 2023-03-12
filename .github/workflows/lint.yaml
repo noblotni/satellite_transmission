@@ -61,4 +61,3 @@ jobs:
 
       - name: ruff
         run: poetry run ruff satellite_rl
-Footer
