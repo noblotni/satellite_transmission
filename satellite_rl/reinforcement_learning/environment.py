@@ -31,13 +31,18 @@ class SatelliteEnv(Env):
     ) -> None:
         """Initialize the environment.
 
-        Args:
-            links (list[dict]): List of links data
-            nb_groups_init (int):  Number of groups used in the initial state
-            nb_modems_init (int): Number of modems used in the initial state
-            nb_modems_per_group (int): Number of modem per group on the initial grid.
-            state_init (Optional[np.ndarray]): Initial state. If provided, it needs to have the shape
-                (nb_groups_init, nb_modems_per_group)
+                Args:
+                    links (list[dict]): List of links data
+                    nb_groups_init (int):  Number of groups used in the initial state
+                    nb_modems_init (int): Number of modems used in the initial state
+                    nb_modems_per_group (int): Number of modem per group on the initial grid.
+        <<<<<<< HEAD:satellite_rl/reinforcement_learning/environment.py
+                    state_init (Optional[np.ndarray]): Initial state. If provided, it needs to have the shape
+                        (nb_groups_init, nb_modems_per_group)
+        =======
+                    state_init (int): Initial state. If provided, it needs to have the shape
+                        (nb_links, 2)
+        >>>>>>> 2b7f613 ([*] Debug greedy init of an environment.):satellite_transmission/environment.py
         """
         super().__init__()
 
@@ -51,7 +56,7 @@ class SatelliteEnv(Env):
 
         self.nb_modems_per_group = nb_modems_per_group
         # State variables for the current state
-        if not self.state_init:
+        if not isinstance(self.state_init, np.ndarray):
             self.state = np.array([(i, 0) for i in range(self.nb_links)])
         else:
             self.state = np.copy(self.state_init)
@@ -61,7 +66,9 @@ class SatelliteEnv(Env):
         # Number of groups used in the current state
         self.nb_groups = nb_groups_init
         # An array to keep track of the used groups and modems
-        self.groups_modems_array = np.zeros((self.nb_groups, self.nb_modems_per_group))
+        self.groups_modems_array = np.zeros(
+            (self.nb_groups, self.nb_modems_per_group), dtype=int
+        )
         # Memorize the optimal state variables
         self.state_min = self.state
         self.nb_modems_min = nb_modems_init
@@ -145,7 +152,9 @@ class SatelliteEnv(Env):
         used groups and modems. groups_modems_array[i,j] is 1
         if the j-th modem of the i-th group is used and 0 otherwise.
         """
-        self.groups_modems_array = np.zeros((self.nb_groups_init, self.nb_modems_init))
+        self.groups_modems_array = np.zeros(
+            (self.nb_groups_init, self.nb_modems_init), dtype=int
+        )
         for modem in self.state:
             self.groups_modems_array[modem[0], modem[1]] = 1
 
@@ -190,7 +199,7 @@ class SatelliteEnv(Env):
 
     def reset(self) -> np.ndarray:
         """Reset the environment to an initial state."""
-        if not self.state_init:
+        if not isinstance(self.state_init, np.ndarray):
             self.state = np.array([(i, 0) for i in range(self.nb_links)])
         else:
             self.state = np.copy(self.state_init)
@@ -204,14 +213,14 @@ class SatelliteEnv(Env):
         print("State of the environment: ", self.state)
 
     def check_state_init(self):
-        """Check if state_init has the shape (nb_groups_init, nb_modems_per_group)."""
-        if self.state_init.shape != (self.nb_groups_init, self.nb_modems_per_group):
+        """Check if state_init has the shape (nb_links, 2)."""
+        if self.state_init.shape != (self.nb_links, 2):
             raise ValueError(
-                f"Error: state_init must have the shape ({self.nb_groups_init}, {self.nb_modems_per_group})"
+                f"Error: state_init must have the shape ({self.nb_links}, 2)"
             )
 
 
-def greedy_initialisation(links: list):
+def greedy_initialisation(links: list) -> SatelliteEnv:
     """Initilialize a rectangle environement greedily."""
     env = SatelliteEnv(
         links=links,
@@ -224,7 +233,7 @@ def greedy_initialisation(links: list):
     modem_ind = 1
     # Affect the links to the modems greedily
     while link_ind < env.nb_links:
-        _, _, reward, _ = env.step(np.array([link_ind, group_ind, modem_ind]))
+        _, reward, _, _ = env.step(np.array([link_ind, group_ind, modem_ind]))
         if reward > 0:
             link_ind += 1
             modem_ind += 1
@@ -235,14 +244,22 @@ def greedy_initialisation(links: list):
             modem_ind = 0
             group_ind += 1
 
+        if group_ind >= link_ind:
+            group_ind = link_ind
+            env.step(np.array([link_ind, group_ind, modem_ind]))
+            link_ind += 1
+            modem_ind += 1
     state_init = env.state
     nb_groups = env.nb_groups
     nb_modems = env.nb_modems
     # Look for the group with the most modems
     nb_modems_per_group = np.max(
-        [len(np.where(state_init[0, :] == i)[0]) for i in range(env.nb_links)]
+        [len(np.where(state_init[:, 0] == i)[0]) for i in range(env.nb_links)]
     )
-
+    new_groups_indexes_map = {
+        key: i for (i, key) in enumerate(np.unique(state_init[:, 0]))
+    }
+    state_init[:, 0] = [new_groups_indexes_map[key] for key in state_init[:, 0]]
     return SatelliteEnv(
         links=links,
         nb_groups_init=nb_groups + 1,

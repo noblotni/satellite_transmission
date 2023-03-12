@@ -11,7 +11,10 @@ import torch.optim as optim
 from termcolor import colored
 
 from satellite_rl import config
-from satellite_rl.reinforcement_learning.environment import SatelliteEnv
+from satellite_rl.reinforcement_learning.environment import (
+    SatelliteEnv,
+    greedy_initialisation,
+)
 
 logging.basicConfig(level=logging.INFO)
 # Set the number of threads for Pytorch
@@ -191,12 +194,7 @@ def run_actor_critic(
 
     #####################################################
 
-    env: SatelliteEnv = SatelliteEnv(
-        links,
-        nb_groups_init=len(links),
-        nb_modems_init=len(links),
-        nb_modems_per_group=len(links),
-    )
+    env: SatelliteEnv = greedy_initialisation(links=links)
     actor: ActorNetwork = ActorNetwork(obs_size=2 * len(links), action_size=3)
     critic: CriticNetwork = CriticNetwork(obs_size=2 * len(links))
     # Initiliaze loss
