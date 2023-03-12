@@ -11,10 +11,7 @@ import torch.optim as optim
 from termcolor import colored
 
 from satellite_rl import config
-from satellite_rl.reinforcement_learning.environment import (
-    SatelliteEnv,
-    greedy_initialisation,
-)
+from satellite_rl.reinforcement_learning.environment import SatelliteEnv, greedy_initialisation
 
 logging.basicConfig(level=logging.INFO)
 # Set the number of threads for Pytorch

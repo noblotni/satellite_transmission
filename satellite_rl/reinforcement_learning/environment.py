@@ -1,8 +1,8 @@
 """Satellite environment."""
 from typing import Optional
+
 import numpy as np
-from gymnasium import Env
-from gymnasium import spaces
+from gymnasium import Env, spaces
 
 # Define constants
 # Modems constants

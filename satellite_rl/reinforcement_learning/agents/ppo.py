@@ -1,13 +1,15 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
 import logging
-from datetime import datetime
 import os
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
-from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 from termcolor import colored
+
+from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 
 logging.basicConfig(level=logging.INFO)
 

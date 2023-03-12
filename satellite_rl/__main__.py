@@ -1,19 +1,20 @@
 """Run the optimization algorithm."""
 import argparse
-from datetime import datetime
 import json
-from pathlib import Path
 import os
+from datetime import datetime
+from pathlib import Path
+
 from termcolor import colored
 
 from satellite_rl.comparison import batch_comparison
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
 from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
 from satellite_rl.report import (
-    generate_solution_report,
     generate_report,
-    generate_report_runs,
     generate_report_comparison,
+    generate_report_runs,
+    generate_solution_report,
 )
 
 

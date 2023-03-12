@@ -1,9 +1,10 @@
 import os
 import webbrowser
-import pandas as pd
-import plotly.graph_objs as go
-import plotly.express as px
+
 import numpy as np
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objs as go
 
 
 def generate_report(csv_file_path: str, report_path: str, report_title: str, params: dict):
