@@ -59,5 +59,8 @@ jobs:
       - name: isort
         run: poetry run isort --check satellite_rl
 
+      - name: pylint
+        run: poetry run pylint satellite_rl
+        
       - name: ruff
         run: poetry run ruff satellite_rl
