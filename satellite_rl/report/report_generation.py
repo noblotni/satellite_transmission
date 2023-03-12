@@ -1,8 +1,8 @@
+import os
+import webbrowser
 import pandas as pd
 import plotly.graph_objs as go
 import plotly.express as px
-import os
-import webbrowser
 import numpy as np
 
 
@@ -33,7 +33,7 @@ def generate_report(csv_file_path: str, report_path: str, report_title: str, par
         title="nb_group_min vs. Episode",
     )
 
-    with open(report_path, "w") as report_file:
+    with open(report_path, "w", encoding="utf-8") as report_file:
         title = report_title.split("\n")
         report_file.write(f"<html><head><title>{report_title}</title></head><body>")
         report_file.write(f"<h1 align='center'>{title[0]}</h1>")
@@ -124,7 +124,7 @@ def generate_report_runs(
     graphs_modem_episode = create_graph_lines(df_episode_modem, None, "nb_modem_min vs. Episode")
     graphs_group_episode = create_graph_lines(df_episode_group, None, "nb_group_min vs. Episode")
 
-    with open(report_path, "w") as report_file:
+    with open(report_path, "w", encoding="utf-8") as report_file:
         title = report_title.split("\n")
         report_file.write(f"<html><head><title>{report_title}</title></head><body>")
         report_file.write(f"<h1 align='center'>{title[0]}</h1>")
@@ -239,7 +239,7 @@ def generate_report_comparison(
         df_episode_group, None, "nb_group_min vs. Episode", names
     )
 
-    with open(report_path, "w") as report_file:
+    with open(report_path, "w", encoding="utf-8") as report_file:
         title = report_title.split("\n")
         report_file.write(f"<html><head><title>{report_title}</title></head><body>")
         report_file.write(f"<h1 align='center'>{title[0]}</h1>")

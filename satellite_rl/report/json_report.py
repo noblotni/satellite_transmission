@@ -43,7 +43,7 @@ def generate_solution_report(state: np.ndarray, links: list, output_path: Path) 
     json_report["nb_modems"]: int = sum(
         [json_report["groups"][group]["nb_modems"] for group in json_report["groups"]]
     )
-    with open(output_path, "w") as file:
+    with open(output_path, "w", encoding="utf-8") as file:
         json.dump(json_report, file, indent=4, sort_keys=True)
 
 

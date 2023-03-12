@@ -42,7 +42,7 @@ def main() -> None:
         type=Path,
         default=Path("./state_min.json"),
     )
-    parser.add_argument("--verbose", help="Time out (seconds).", type=int, default=-1)
+    parser.add_argument("--verbose", help="Verbosity.", type=int, default=-1)
     parser.add_argument("--print_freq", help="Print frequency.", type=int, default=1000)
     parser.add_argument("--log_freq", help="Log frequency.", type=int, default=1000)
     parser.add_argument(
@@ -56,7 +56,7 @@ def main() -> None:
     args: argparse.Namespace = parser.parse_args()
     args.output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(args.links_path, "r") as file:
+    with open(args.links_path, "r", encoding="utf-8") as file:
         links: list = json.load(file)
 
     filename = datetime.now().strftime("%d/%m/%Y %H:%M:%S")

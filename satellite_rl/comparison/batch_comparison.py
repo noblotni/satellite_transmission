@@ -1,9 +1,9 @@
+from datetime import datetime
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
 from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
 from termcolor import colored
 import numpy as np
 from tqdm import tqdm
-from datetime import datetime
 
 
 def batch_comparison(

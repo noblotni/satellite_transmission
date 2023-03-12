@@ -1,6 +1,6 @@
 """Satellite environment."""
-import numpy as np
 from typing import Optional
+import numpy as np
 from gymnasium import Env
 from gymnasium import spaces
 

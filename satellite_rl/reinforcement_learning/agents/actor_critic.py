@@ -112,7 +112,7 @@ def run_actor_critic(
     verbose: int,
     report: bool,
     filename: str,
-    batch: bool,
+    batch: bool = False,
 ):
     """Run the actor-critic algorithm to solve the optimization problem.
 

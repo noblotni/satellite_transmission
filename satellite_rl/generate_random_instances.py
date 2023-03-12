@@ -46,7 +46,7 @@ def generate_all_instances(nb_instances: int, folder_path: Path) -> None:
                 }
             )
 
-        with open(f"{folder_path}/instance{i}.json", "w") as file:
+        with open(f"{folder_path}/instance{i}.json", "w", encoding="utf-8") as file:
             json.dump(links, file, indent=4, sort_keys=True)
 
 
