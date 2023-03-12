@@ -60,5 +60,5 @@ jobs:
         run: poetry run isort --check satellite_rl
 
       - name: ruff
-        run: poetry run ruff msatellite_rl
+        run: poetry run ruff satellite_rl
 Footer
