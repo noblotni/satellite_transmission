@@ -51,10 +51,8 @@ class ActorNetwork(nn.Module):
         x = self.fc2_layer(x)
         mu: torch.Tensor = self.mu_out_layer(x)
         sigma_diag: torch.Tensor = self.sigma_out_layer(x)
-        norm_dist: torch.distributions.MultivariateNormal = (
-            torch.distributions.MultivariateNormal(
-                loc=mu, covariance_matrix=torch.diag(sigma_diag)
-            )
+        norm_dist: torch.distributions.MultivariateNormal = torch.distributions.MultivariateNormal(
+            loc=mu, covariance_matrix=torch.diag(sigma_diag)
         )
         x = norm_dist.sample()
         return x.detach(), norm_dist
@@ -81,7 +79,6 @@ class CriticNetwork(nn.Module):
 def sample_action(
     actor: ActorNetwork, env: SatelliteEnv
 ) -> tuple[torch.Tensor, torch.Tensor, torch.distributions.MultivariateNormal]:
-
     # Scale state
     state = torch.Tensor(env.state)
     state = scale_state(env, state)
@@ -213,11 +210,7 @@ def run_actor_critic(
         )
         print("max timesteps per episode : ", duration_episode)
         print("log frequency : " + str(log_freq) + " timesteps")
-        print(
-            "printing average reward over episodes in last : "
-            + str(print_freq)
-            + " timesteps"
-        )
+        print("printing average reward over episodes in last : " + str(print_freq) + " timesteps")
         print("timeout : " + str(timeout) + " timesteps")
         print(
             "--------------------------------------------------------------------------------------------"
@@ -353,8 +346,7 @@ def run_actor_critic(
 
                 if (
                     timeout != 0
-                    and (datetime.now().replace(microsecond=0) - start_time).seconds
-                    > timeout
+                    and (datetime.now().replace(microsecond=0) - start_time).seconds > timeout
                 ):
                     if verbose == 1:
                         logging.info("Timeout reached, stopping the algorithm")
@@ -388,9 +380,7 @@ def run_actor_critic(
                                 "nb_group_min": nb_group_min_time_step,
                             }
                         )
-                        df_time_step.to_csv(
-                            results_dir + "time_step_report.csv", index=False
-                        )
+                        df_time_step.to_csv(results_dir + "time_step_report.csv", index=False)
                     else:
                         results_dir = None
                     return (

@@ -62,9 +62,7 @@ class SatelliteEnv(Env):
         # Number of groups used in the current state
         self.nb_groups = nb_groups_init
         # An array to keep track of the used groups and modems
-        self.groups_modems_array = np.zeros(
-            (self.nb_groups, self.nb_modems_per_group), dtype=int
-        )
+        self.groups_modems_array = np.zeros((self.nb_groups, self.nb_modems_per_group), dtype=int)
         # Memorize the optimal state variables
         self.state_min = self.state
         self.nb_modems_min = nb_modems_init
@@ -84,9 +82,7 @@ class SatelliteEnv(Env):
             dtype=int,
         )
         self.observation_shape = (self.nb_links, 2)
-        self.high_obs = np.array(
-            [self.nb_groups_init - 1, self.nb_modems_per_group - 1]
-        )
+        self.high_obs = np.array([self.nb_groups_init - 1, self.nb_modems_per_group - 1])
         self.observation_space = spaces.Box(
             low=np.zeros(self.observation_shape),
             high=np.full(self.observation_shape, self.high_obs),
@@ -148,9 +144,7 @@ class SatelliteEnv(Env):
         used groups and modems. groups_modems_array[i,j] is 1
         if the j-th modem of the i-th group is used and 0 otherwise.
         """
-        self.groups_modems_array = np.zeros(
-            (self.nb_groups_init, self.nb_modems_init), dtype=int
-        )
+        self.groups_modems_array = np.zeros((self.nb_groups_init, self.nb_modems_init), dtype=int)
         for modem in self.state:
             self.groups_modems_array[modem[0], modem[1]] = 1
 
@@ -158,9 +152,7 @@ class SatelliteEnv(Env):
         """Check if the modems respect the constraints."""
         for link_coord in self.state:
             indices = np.where(
-                np.logical_and(
-                    self.state[:, 0] == link_coord[0], self.state[:, 1] == link_coord[1]
-                )
+                np.logical_and(self.state[:, 0] == link_coord[0], self.state[:, 1] == link_coord[1])
             )[0]
             links_in_modem = [self.links[indice] for indice in indices]
             binary_rate = np.sum([link["binary_rate"] for link in links_in_modem])
@@ -179,9 +171,7 @@ class SatelliteEnv(Env):
             indices = np.where(self.state[:, 0] == link_coord[0])[0]
             links_in_group = [self.links[indice] for indice in indices]
             bandwidth = np.sum([link["bandwidth"] for link in links_in_group])
-            inverse_binary_rate = np.sum(
-                [link["inverse_binary_rate"] for link in links_in_group]
-            )
+            inverse_binary_rate = np.sum([link["inverse_binary_rate"] for link in links_in_group])
             min_group_inverse_binary_rate = np.min(
                 [link["group_inverse_binary_rate"] for link in links_in_group]
             )
@@ -211,9 +201,7 @@ class SatelliteEnv(Env):
     def check_state_init(self):
         """Check if state_init has the shape (nb_links, 2)."""
         if self.state_init.shape != (self.nb_links, 2):
-            raise ValueError(
-                f"Error: state_init must have the shape ({self.nb_links}, 2)"
-            )
+            raise ValueError(f"Error: state_init must have the shape ({self.nb_links}, 2)")
 
 
 def greedy_initialisation(links: list) -> SatelliteEnv:
@@ -252,9 +240,7 @@ def greedy_initialisation(links: list) -> SatelliteEnv:
     nb_modems_per_group = np.max(
         [len(np.where(state_init[:, 0] == i)[0]) for i in range(env.nb_links)]
     )
-    new_groups_indexes_map = {
-        key: i for (i, key) in enumerate(np.unique(state_init[:, 0]))
-    }
+    new_groups_indexes_map = {key: i for (i, key) in enumerate(np.unique(state_init[:, 0]))}
     state_init[:, 0] = [new_groups_indexes_map[key] for key in state_init[:, 0]]
     return SatelliteEnv(
         links=links,

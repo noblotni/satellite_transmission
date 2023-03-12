@@ -36,13 +36,15 @@ def generate_all_instances(nb_instances: int, folder_path: Path) -> None:
             group_inverse_inverse_binary_rate: float = np.random.uniform(
                 binary_rate, MAX_GROUP_INV_BIN_RATE
             )
-            links.append({
-                "bandwidth": bandwidth,
-                "binary_rate": binary_rate,
-                "symbol_rate": symbol_rate,
-                "inverse_binary_rate": binary_rate,
-                "group_inverse_binary_rate": group_inverse_inverse_binary_rate,
-            })
+            links.append(
+                {
+                    "bandwidth": bandwidth,
+                    "binary_rate": binary_rate,
+                    "symbol_rate": symbol_rate,
+                    "inverse_binary_rate": binary_rate,
+                    "group_inverse_binary_rate": group_inverse_inverse_binary_rate,
+                }
+            )
 
         with open(f"{folder_path}/instance{i}.json", "w") as file:
             json.dump(links, file, indent=4, sort_keys=True)

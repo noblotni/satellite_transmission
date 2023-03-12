@@ -91,9 +91,7 @@ class ActorCritic(nn.Module):
         action_clipped = torch.clip(
             (self.state_dim - 1) * action,
             min=torch.zeros(3, dtype=torch.int),
-            max=torch.Tensor(
-                [self.state_dim - 1, self.state_dim - 1, self.state_dim - 1]
-            ),
+            max=torch.Tensor([self.state_dim - 1, self.state_dim - 1, self.state_dim - 1]),
         ).int()
 
         return (
@@ -147,9 +145,7 @@ class PPO:
     def select_action(self, state):
         with torch.no_grad():
             state = torch.FloatTensor(state).to(device)
-            action_clipped, action, action_logprob, state_val = self.policy_old.act(
-                state
-            )
+            action_clipped, action, action_logprob, state_val = self.policy_old.act(state)
 
         self.buffer.states.append(state)
         self.buffer.actions.append(action)
@@ -174,19 +170,11 @@ class PPO:
         rewards = (rewards - rewards.mean()) / (rewards.std() + 1e-7)
 
         # convert list to tensor
-        old_states = (
-            torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
-        )
-        old_actions = (
-            torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
-        )
-        old_logprobs = (
-            torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
-        )
+        old_states = torch.squeeze(torch.stack(self.buffer.states, dim=0)).detach().to(device)
+        old_actions = torch.squeeze(torch.stack(self.buffer.actions, dim=0)).detach().to(device)
+        old_logprobs = torch.squeeze(torch.stack(self.buffer.logprobs, dim=0)).detach().to(device)
         old_state_values = (
-            torch.squeeze(torch.stack(self.buffer.state_values, dim=0))
-            .detach()
-            .to(device)
+            torch.squeeze(torch.stack(self.buffer.state_values, dim=0)).detach().to(device)
         )
 
         # calculate advantages
@@ -194,11 +182,8 @@ class PPO:
 
         # Optimize policy for K epochs
         for _ in range(self.K_epochs):
-
             # Evaluating old actions and values
-            logprobs, state_values, dist_entropy = self.policy.evaluate(
-                old_states, old_actions
-            )
+            logprobs, state_values, dist_entropy = self.policy.evaluate(old_states, old_actions)
 
             # match state_values tensor dimensions with rewards tensor
             state_values = torch.squeeze(state_values)
@@ -208,9 +193,7 @@ class PPO:
 
             # Finding Surrogate Loss
             surr1 = ratios * advantages
-            surr2 = (
-                torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
-            )
+            surr2 = torch.clamp(ratios, 1 - self.eps_clip, 1 + self.eps_clip) * advantages
 
             # final loss of clipped objective PPO
             loss = (
@@ -285,9 +268,7 @@ def run_ppo(
     max_ep_len = duration_episode  # max timesteps in one episode
     update_timestep = max_ep_len * 4  # update policy every n timesteps
 
-    max_training_timesteps = (
-        nb_episodes  # break training loop if timeteps > max_training_timesteps
-    )
+    max_training_timesteps = nb_episodes  # break training loop if timeteps > max_training_timesteps
 
     #####################################################
     if verbose == 2:
@@ -347,11 +328,7 @@ def run_ppo(
         print("max training timesteps : ", max_training_timesteps)
         print("max timesteps per episode : ", max_ep_len)
         print("log frequency : " + str(log_freq) + " timesteps")
-        print(
-            "printing average reward over episodes in last : "
-            + str(print_freq)
-            + " timesteps"
-        )
+        print("printing average reward over episodes in last : " + str(print_freq) + " timesteps")
         print("timeout : " + str(timeout) + " seconds")
         print(
             "--------------------------------------------------------------------------------------------"
@@ -419,12 +396,10 @@ def run_ppo(
     i_episode = 0
     # training loop
     while i_episode <= nb_episodes:
-
         state = env.reset()
         current_ep_reward = 0
 
         for t in range(1, max_ep_len + 1):
-
             # select action with policy
             action = ppo_agent.select_action(state)
             state, reward, done, _ = env.step(action)
@@ -447,7 +422,6 @@ def run_ppo(
 
             # log in logging file
             if t % log_freq == 0:
-
                 # log average reward till last episode
                 log_avg_reward = log_running_reward / log_running_episodes
                 log_avg_reward = round(log_avg_reward, 4)
@@ -473,9 +447,7 @@ def run_ppo(
                             colored(i_episode, "blue"),
                             colored(t, "blue"),
                             colored(
-                                (
-                                    datetime.now().replace(microsecond=0) - start_time
-                                ).seconds,
+                                (datetime.now().replace(microsecond=0) - start_time).seconds,
                                 "blue",
                             ),
                         )
@@ -501,9 +473,7 @@ def run_ppo(
                             colored(i_episode, "blue"),
                             colored(t, "blue"),
                             colored(
-                                (
-                                    datetime.now().replace(microsecond=0) - start_time
-                                ).seconds,
+                                (datetime.now().replace(microsecond=0) - start_time).seconds,
                                 "blue",
                             ),
                         )

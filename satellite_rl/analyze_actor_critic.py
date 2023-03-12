@@ -33,9 +33,7 @@ def main() -> None:
 
     with Pool(processes=2) as pool:
         solutions: list = pool.starmap(solve, [(links, i) for i in range(30)])
-    solutions_df: pd.DataFrame = pd.DataFrame(
-        solutions, columns=["nb_modems", "nb_groups"]
-    )
+    solutions_df: pd.DataFrame = pd.DataFrame(solutions, columns=["nb_modems", "nb_groups"])
     solutions_df.to_csv("satellite_rl/output/solutions.csv")
 
 

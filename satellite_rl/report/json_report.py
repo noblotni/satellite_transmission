@@ -28,9 +28,7 @@ def generate_solution_report(state: np.ndarray, links: list, output_path: Path) 
             }
         json_report["groups"][group_key]["links"].append(link_ind)
         json_report["groups"][group_key]["nb_links"] += 1
-        json_report["groups"][group_key]["bandwidth_used"] += links[link_ind][
-            "bandwidth"
-        ]
+        json_report["groups"][group_key]["bandwidth_used"] += links[link_ind]["bandwidth"]
         json_report: dict = generate_modem_report(
             json_report=json_report,
             modem_indice=coord[1],
@@ -62,10 +60,10 @@ def generate_modem_report(
         }
     json_report["groups"][group_key]["modems"][modem_key]["links"].append(link_ind)
     json_report["groups"][group_key]["modems"][modem_key]["nb_links"] += 1
-    json_report["groups"][group_key]["modems"][modem_key]["binary_rate_used"] += links[
-        link_ind
-    ]["binary_rate"]
-    json_report["groups"][group_key]["modems"][modem_key]["symbol_rate_used"] += links[
-        link_ind
-    ]["symbol_rate"]
+    json_report["groups"][group_key]["modems"][modem_key]["binary_rate_used"] += links[link_ind][
+        "binary_rate"
+    ]
+    json_report["groups"][group_key]["modems"][modem_key]["symbol_rate_used"] += links[link_ind][
+        "symbol_rate"
+    ]
     return json_report

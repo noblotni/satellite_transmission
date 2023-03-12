@@ -18,9 +18,7 @@ from satellite_rl.report import (
 
 
 def main() -> None:
-    parser: argparse.ArgumentParser = argparse.ArgumentParser(
-        "Run the optimization algorithm."
-    )
+    parser: argparse.ArgumentParser = argparse.ArgumentParser("Run the optimization algorithm.")
     parser.add_argument("links_path", help="Path to the links data.", type=Path)
     parser.add_argument(
         "--algo",
@@ -28,12 +26,8 @@ def main() -> None:
         type=str,
         default="actor-critic",
     )
-    parser.add_argument(
-        "--nb_episodes", help="Number of episodes.", type=int, default=10
-    )
-    parser.add_argument(
-        "--nb_timesteps", help="Duration of an episode.", type=int, default=10000
-    )
+    parser.add_argument("--nb_episodes", help="Number of episodes.", type=int, default=10)
+    parser.add_argument("--nb_timesteps", help="Duration of an episode.", type=int, default=10000)
     parser.add_argument("--timeout", help="Time out (seconds).", type=int, default=0)
     parser.add_argument(
         "--nb_repeat",
@@ -170,14 +164,8 @@ def main() -> None:
         if args.nb_repeat > 1 and args.algo != "compare":
             generate_report_runs(
                 report_paths,
-                "satellite_rl/output/"
-                + "/".join(report_paths[0].split("/")[:-2])
-                + "/report.html",
-                (
-                    "Actor-Critic Algorithm"
-                    if args.algo == "actor-critic"
-                    else "PPO Algorithm"
-                )
+                "satellite_rl/output/" + "/".join(report_paths[0].split("/")[:-2]) + "/report.html",
+                ("Actor-Critic Algorithm" if args.algo == "actor-critic" else "PPO Algorithm")
                 + f"\n{instance_name} - {args.nb_repeat} runs",
                 {
                     "Number of episodes": args.nb_episodes,
