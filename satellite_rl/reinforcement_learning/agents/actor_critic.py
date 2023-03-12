@@ -309,8 +309,8 @@ def run_actor_critic(
                         )
                         logging.info(
                             "Minimal solution is : {} modems, {} groups\n".format(
-                                colored(env.nb_mod_min, "yellow"),
-                                colored(env.nb_grps_min, "yellow"),
+                                colored(env.nb_modems_min, "yellow"),
+                                colored(env.nb_groups_min, "yellow"),
                             )
                         )
                     elif verbose == 2:
@@ -332,8 +332,8 @@ def run_actor_critic(
                         )
                         print(
                             "Minimal solution is : {} modems, {} groups".format(
-                                colored(env.nb_mod_min, "yellow"),
-                                colored(env.nb_grps_min, "yellow"),
+                                colored(env.nb_modems_min, "yellow"),
+                                colored(env.nb_groups_min, "yellow"),
                             )
                         )
                         print(
@@ -346,8 +346,8 @@ def run_actor_critic(
 
                 if report:
                     reward_per_time_step.append(cumulated_reward)
-                    nb_modem_min_time_step.append(env.nb_mod_min)
-                    nb_group_min_time_step.append(env.nb_grps_min)
+                    nb_modem_min_time_step.append(env.nb_modems_min)
+                    nb_group_min_time_step.append(env.nb_groups_min)
                     episodes.append(i_ep)
                     timesteps.append(j)
 

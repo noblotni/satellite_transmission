@@ -31,21 +31,17 @@ class SatelliteEnv(Env):
     ) -> None:
         """Initialize the environment.
 
-                Args:
-                    links (list[dict]): List of links data
-                    nb_groups_init (int):  Number of groups used in the initial state
-                    nb_modems_init (int): Number of modems used in the initial state
-                    nb_modems_per_group (int): Number of modem per group on the initial grid.
-        <<<<<<< HEAD:satellite_rl/reinforcement_learning/environment.py
-                    state_init (Optional[np.ndarray]): Initial state. If provided, it needs to have the shape
-                        (nb_groups_init, nb_modems_per_group)
-        =======
-                    state_init (int): Initial state. If provided, it needs to have the shape
-                        (nb_links, 2)
-        >>>>>>> 2b7f613 ([*] Debug greedy init of an environment.):satellite_transmission/environment.py
+        Args:
+            links (list[dict]): List of links data
+            nb_groups_init (int):  Number of groups used in the initial state
+            nb_modems_init (int): Number of modems used in the initial state
+            nb_modems_per_group (int): Number of modem per group on the initial grid.
+            state_init (int): Initial state. If provided, it needs to have the shape
+                (nb_links, 2)
         """
         super().__init__()
-
+        self.links = links
+        self.nb_links = len(self.links)
         # Initial state variables
         # Initial state if provided
         self.state_init = state_init
