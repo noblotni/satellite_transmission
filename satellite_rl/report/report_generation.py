@@ -257,7 +257,6 @@ def generate_report_comparison(
     with open(report_path, "w", encoding="utf-8") as report_file:
         title = report_title.split("\n")
         report_file.write(f"<html><head><title>{report_title}</title></head><body>")
-        report_file.write(f"<style>{style}</style>")
         report_file.write(f"<h1 align='center'>{title[0]}</h1>")
         report_file.write(f"<h2 align='center'>{title[1]}</h2>")
         report_file.write(

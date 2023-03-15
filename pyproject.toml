@@ -18,8 +18,8 @@ pandas = "^1.5.3"
 termcolor = "^2.2.0"
 tqdm = "^4.65.0"
 plotly = "^5.13.1"
-dash = "^2.8.1"
 torch = "^1.13.1"
+dash = "^2.8.1"
 
 
 [tool.poetry.group.dev.dependencies]
