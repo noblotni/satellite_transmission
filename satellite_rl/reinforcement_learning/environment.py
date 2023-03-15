@@ -1,7 +1,8 @@
 """Satellite environment."""
+from typing import Optional
+
 import numpy as np
-from gymnasium import Env
-from gymnasium import spaces
+from gymnasium import Env, spaces
 
 # Define constants
 # Modems constants
@@ -20,52 +21,83 @@ GRP_BANDWIDTH: int = 56000
 class SatelliteEnv(Env):
     """Custom environment to model the optimization problem."""
 
-    def __init__(self, links: list) -> None:
-        """Create an environment where to put satellite links.
+    def __init__(
+        self,
+        links: list[dict],
+        nb_groups_init: int,
+        nb_modems_init: int,
+        state_init: Optional[np.ndarray] = None,
+        nb_modems_per_group: int = GRP_NB_LINKS,
+    ) -> None:
+        """Initialize the environment.
 
         Args:
-            - links (list): List of links data
+            links (list[dict]): List of links data
+            nb_groups_init (int):  Number of groups used in the initial state
+            nb_modems_init (int): Number of modems used in the initial state
+            nb_modems_per_group (int): Number of modem per group on the initial grid.
+            state_init (int): Initial state. If provided, it needs to have the shape
+                (nb_links, 2)
         """
         super().__init__()
-        self.links: list[dict] = links
-        self.nb_links: int = len(self.links)
-        self.grp_mod_array: np.ndarray = np.zeros((self.nb_links, self.nb_links))
-        # State variables for the current state
-        self.state: np.ndarray = np.array([(i, i) for i in range(self.nb_links)])
-        # Number of modems
-        self.nb_mod: int = self.nb_links
-        # Number of groups
-        self.nb_grps: int = self.nb_links
-        # Memorize the optimal state variables
-        self.state_min: np.ndarray = self.state
-        self.nb_mod_min: int = self.nb_links
-        self.nb_grps_min: int = self.nb_links
-        # Fill the group-modem array
-        self.update_grp_mod_array()
+        self.links = links
+        self.nb_links = len(self.links)
+        # Initial state variables
+        # Initial state if provided
+        self.state_init = state_init
+        # Number of modems used in the initial state
+        self.nb_modems_init = nb_modems_init
+        # Number of groups used in the initial state
+        self.nb_groups_init = nb_groups_init
 
-        self.action_shape: tuple[int] = (3,)
-        self.action_space: spaces.Box = spaces.Box(
+        self.nb_modems_per_group = nb_modems_per_group
+        # State variables for the current state
+        if not isinstance(self.state_init, np.ndarray):
+            self.state = np.array([(i, 0) for i in range(self.nb_links)])
+        else:
+            self.state = np.copy(self.state_init)
+            self.check_state_init()
+        # Number of modems used in the current state
+        self.nb_modems = nb_modems_init
+        # Number of groups used in the current state
+        self.nb_groups = nb_groups_init
+        # An array to keep track of the used groups and modems
+        self.groups_modems_array = np.zeros((self.nb_groups, self.nb_modems_per_group), dtype=int)
+        # Memorize the optimal state variables
+        self.state_min = self.state
+        self.nb_modems_min = nb_modems_init
+        self.nb_groups_min = nb_groups_init
+        # Fill the groups-modems array
+        self.update_groups_modems_array()
+
+        # Define spaces
+        self.action_shape = (3,)
+        self.high_action = np.array(
+            [self.nb_links - 1, self.nb_groups_init - 1, self.nb_modems_per_group - 1]
+        )
+        self.action_space = spaces.Box(
             low=np.zeros(self.action_shape),
-            high=np.full(self.action_shape, self.nb_links - 1),
+            high=self.high_action,
             shape=self.action_shape,
             dtype=int,
         )
-        self.observation_shape: tuple[int, int] = (self.nb_links, 2)
-        self.observation_space: spaces.Box = spaces.Box(
+        self.observation_shape = (self.nb_links, 2)
+        self.high_obs = np.array([self.nb_groups_init - 1, self.nb_modems_per_group - 1])
+        self.observation_space = spaces.Box(
             low=np.zeros(self.observation_shape),
-            high=np.full(self.observation_shape, self.nb_links),
+            high=np.full(self.observation_shape, self.high_obs),
             shape=self.observation_shape,
             dtype=int,
         )
 
     def reward_function(self) -> float:
         """Compute the reward."""
-        nb_modems: int = np.sum(self.grp_mod_array)
-        nb_grps: int = np.sum(np.sum(self.grp_mod_array, axis=1) > 0)
-        diff: int = (nb_modems + nb_grps) - (self.nb_grps + self.nb_mod)
-        self.nb_mod: int = nb_modems
-        self.nb_grps: int = nb_grps
-        ratio: float = (self.nb_mod * self.nb_grps) / (self.nb_links * self.nb_links)
+        nb_modems = np.sum(self.groups_modems_array)
+        nb_groups = np.sum(np.sum(self.groups_modems_array, axis=1) > 0)
+        diff = (nb_modems + nb_groups) - (self.nb_groups + self.nb_modems)
+        self.nb_modems = nb_modems
+        self.nb_groups = nb_groups
+        ratio = (self.nb_modems * self.nb_groups) / (self.nb_links * self.nb_links)
         if diff == 0:
             return -((ratio) ** 0.5)
         elif diff < 0:
@@ -73,88 +105,147 @@ class SatelliteEnv(Env):
         elif diff > 0:
             return -diff * (ratio) ** 0.5
 
-    def step(self, action: np.ndarray) -> tuple[np.array, float, bool, dict]:
+    def step(self, action: np.ndarray) -> tuple:
         """Execute one time step within the environment."""
         # Copy variables before action
-        state_before_action: np.ndarray = np.copy(self.state)
-        grp_mod_array_before: np.ndarray = np.copy(self.grp_mod_array)
+        state_before_action = np.copy(self.state)
+        groups_modems_array_before = np.copy(self.groups_modems_array)
         self.take_action(action)
-        # Reset the environment
+        legal_move = self.is_legal_move()
+        # Reset the environment to the
         # previous state if
         # the action dos not respect the constraints
-        if not self.is_legal_move():
+        if not legal_move:
             self.state = state_before_action
-            self.grp_mod_array = grp_mod_array_before
-        reward: float = self.reward_function()
+            self.groups_modems_array = groups_modems_array_before
+        reward = self.reward_function()
         # Memorize optimal state variables
-        has_improved: bool = self.nb_mod_min + self.nb_grps_min > self.nb_mod + self.nb_grps
-        if has_improved:
+        if self.nb_modems_min + self.nb_groups_min > self.nb_modems + self.nb_groups:
             self.state_min = np.copy(self.state)
-            self.nb_grps_min = self.nb_grps
-            self.nb_mod_min = self.nb_mod
+            self.nb_groups_min = self.nb_groups
+            self.nb_modems_min = self.nb_modems
         return self.state, reward, False, {}
 
-    def take_action(self, action: np.ndarray) -> None:
+    def take_action(self, action: np.ndarray):
         """Move one link from a case to another one."""
         self.state[action[0], :] = [action[1], action[2]]
-        self.update_grp_mod_array()
+        self.update_groups_modems_array()
 
     def is_legal_move(self) -> bool:
         """Check if the move respects the constraints."""
-        are_modems_ok: bool = self.check_modems()
-        are_groups_ok: bool = self.check_groups()
-        return are_modems_ok and are_groups_ok
+        modems_ok = self.check_modems()
+        groups_ok = self.check_groups()
+        return modems_ok and groups_ok
 
-    def update_grp_mod_array(self) -> None:
-        self.grp_mod_array: np.ndarray = np.zeros((self.nb_links, self.nb_links))
+    def update_groups_modems_array(self):
+        """Update the groups-modems array.
+
+        This array is used to keep track of the
+        used groups and modems. groups_modems_array[i,j] is 1
+        if the j-th modem of the i-th group is used and 0 otherwise.
+        """
+        self.groups_modems_array = np.zeros((self.nb_groups_init, self.nb_modems_init), dtype=int)
         for modem in self.state:
-            self.grp_mod_array[modem[0], modem[1]] = 1
+            self.groups_modems_array[modem[0], modem[1]] = 1
 
     def check_modems(self) -> bool:
         """Check if the modems respect the constraints."""
-        for s in self.state:
-            indices: np.ndarray[int] = np.where(
-                np.logical_and(self.state[:, 0] == s[0], self.state[:, 1] == s[1])
+        for link_coord in self.state:
+            indices = np.where(
+                np.logical_and(self.state[:, 0] == link_coord[0], self.state[:, 1] == link_coord[1])
             )[0]
-            links_in_modem: list[dict] = [self.links[indice] for indice in indices]
-            binary_rate: int = np.sum([link["binary_rate"] for link in links_in_modem])
-            symbol_rate: float = np.sum([link["symbol_rate"] for link in links_in_modem])
+            links_in_modem = [self.links[indice] for indice in indices]
+            binary_rate = np.sum([link["binary_rate"] for link in links_in_modem])
+            symbol_rate = np.sum([link["symbol_rate"] for link in links_in_modem])
             if (
-                    len(indices) > MOD_NB_LINKS
-                    or binary_rate > MOD_BIN_RATE
-                    or symbol_rate > MOD_SYMB_RATE
+                len(indices) > MOD_NB_LINKS
+                or binary_rate > MOD_BIN_RATE
+                or symbol_rate > MOD_SYMB_RATE
             ):
                 return False
         return True
 
     def check_groups(self) -> bool:
         """Check if the groups respect the constraints."""
-        for s in self.state:
-            indices: int = np.where(self.state[:, 0] == s[0])[0]
-            links_in_group: list = [self.links[indice] for indice in indices]
-            bandwidth: float = np.sum([link["bandwidth"] for link in links_in_group])
-            inverse_binary_rate: int = np.sum(
-                [link["inverse_binary_rate"] for link in links_in_group]
-            )
-            min_group_inverse_binary_rate: float = np.min(
+        for link_coord in self.state:
+            indices = np.where(self.state[:, 0] == link_coord[0])[0]
+            links_in_group = [self.links[indice] for indice in indices]
+            bandwidth = np.sum([link["bandwidth"] for link in links_in_group])
+            inverse_binary_rate = np.sum([link["inverse_binary_rate"] for link in links_in_group])
+            min_group_inverse_binary_rate = np.min(
                 [link["group_inverse_binary_rate"] for link in links_in_group]
             )
             if (
-                    bandwidth > GRP_BANDWIDTH
-                    or len(indices) > GRP_NB_LINKS
-                    or inverse_binary_rate > min_group_inverse_binary_rate
+                bandwidth > GRP_BANDWIDTH
+                or len(indices) > GRP_NB_LINKS
+                or inverse_binary_rate > min_group_inverse_binary_rate
             ):
                 return False
         return True
 
     def reset(self) -> np.ndarray:
         """Reset the environment to an initial state."""
-        self.state: np.ndarray = np.array([(i, i) for i in range(self.nb_links)])
-        self.nb_mod: int = self.nb_links
-        self.nb_grps: int = self.nb_links
-        self.update_grp_mod_array()
+        if not isinstance(self.state_init, np.ndarray):
+            self.state = np.array([(i, 0) for i in range(self.nb_links)])
+        else:
+            self.state = np.copy(self.state_init)
+        self.nb_modems = self.nb_modems_init
+        self.nb_groups = self.nb_groups_init
+        self.update_groups_modems_array()
         return self.state
 
     def render(self) -> None:
         """Render the environment."""
         print("State of the environment: ", self.state)
+
+    def check_state_init(self):
+        """Check if state_init has the shape (nb_links, 2)."""
+        if self.state_init.shape != (self.nb_links, 2):
+            raise ValueError(f"Error: state_init must have the shape ({self.nb_links}, 2)")
+
+
+def greedy_initialisation(links: list) -> SatelliteEnv:
+    """Initilialize a rectangle environement greedily."""
+    env = SatelliteEnv(
+        links=links,
+        nb_modems_init=len(links),
+        nb_groups_init=len(links),
+        nb_modems_per_group=len(links),
+    )
+    link_ind = 1
+    group_ind = 0
+    modem_ind = 1
+    # Affect the links to the modems greedily
+    while link_ind < env.nb_links:
+        _, reward, _, _ = env.step(np.array([link_ind, group_ind, modem_ind]))
+        if reward > 0:
+            link_ind += 1
+            modem_ind += 1
+        else:
+            modem_ind += 1
+
+        if modem_ind > GRP_NB_LINKS:
+            modem_ind = 0
+            group_ind += 1
+
+        if group_ind >= link_ind:
+            group_ind = link_ind
+            env.step(np.array([link_ind, group_ind, modem_ind]))
+            link_ind += 1
+            modem_ind += 1
+    state_init = env.state
+    nb_groups = env.nb_groups
+    nb_modems = env.nb_modems
+    # Look for the group with the most modems
+    nb_modems_per_group = np.max(
+        [len(np.where(state_init[:, 0] == i)[0]) for i in range(env.nb_links)]
+    )
+    new_groups_indexes_map = {key: i for (i, key) in enumerate(np.unique(state_init[:, 0]))}
+    state_init[:, 0] = [new_groups_indexes_map[key] for key in state_init[:, 0]]
+    return SatelliteEnv(
+        links=links,
+        nb_groups_init=nb_groups + 1,
+        nb_modems_init=nb_modems,
+        state_init=state_init,
+        nb_modems_per_group=nb_modems_per_group,
+    )

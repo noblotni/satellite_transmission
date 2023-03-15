@@ -13,22 +13,31 @@ packages = [{ include = "satellite_rl" }]
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
-torch = [{ markers = "sys_platform == 'macos'", url = "https://download.pytorch.org/whl/cpu/torch-1.13.1-cp310-none-macosx_11_0_arm64.whl" },
-    { markers = "sys_platform == 'linux'", url = "https://download.pytorch.org/whl/torch-1.13.1-cp310-cp310-manylinux2014_aarch64.whl" },
-    { markers = "sys_platform == 'win32'", version = "1.13.1" }
-]
 gymnasium = "^0.27.1"
 pandas = "^1.5.3"
 termcolor = "^2.2.0"
 tqdm = "^4.65.0"
 plotly = "^5.13.1"
 dash = "^2.8.1"
+torch = "^1.13.1"
 
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.1.0"
+ruff = "^0.0.254"
+isort = "^5.12.0"
+pylint = "^2.17.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.black]
+line-length = 100
+
+[tool.isort]
+profile = "black"
+line_length = 100
 
 [tool.poetry.scripts]
 generate_easy_instances = "satellite_rl.generate_easy_instances:main"

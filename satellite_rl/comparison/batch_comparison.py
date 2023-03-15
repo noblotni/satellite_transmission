@@ -1,11 +1,26 @@
-from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
-from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
-from termcolor import colored
-import numpy as np
-from tqdm import tqdm
 from datetime import datetime
 
-def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, print_freq, log_freq, timeout, verbose, generate_report, filename):
+import numpy as np
+from termcolor import colored
+from tqdm import tqdm
+
+from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
+from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
+
+
+def batch_comparison(
+    links,
+    algo,
+    nb_episodes,
+    duration_episode,
+    nb_repeat,
+    print_freq,
+    log_freq,
+    timeout,
+    verbose,
+    generate_report,
+    filename,
+):
     print("=========================================")
     print("Starting at {}".format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
     print("=========================================")
@@ -19,11 +34,11 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, prin
         state_min_list_actor = []
         nb_grps_min_list_ppo = []
         nb_mod_min_list_ppo = []
-        state_min_list_ppo = []
-        
+        state_min_list_ppo = []        
+
     best_ppo = 0
     best_actor = 0
-    #verbose = 0 if nb_repeat > 1 else 1
+    # verbose = 0 if nb_repeat > 1 else 1
 
     if verbose == 0:
         for i in tqdm(range(nb_repeat)):
@@ -73,6 +88,7 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, prin
                 state_min, nb_grps_min, nb_mod_min, results_dir = run_actor_critic(
                     links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
                     log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=False
+
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
@@ -93,7 +109,7 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, prin
                     links, nb_episodes=nb_episodes, duration_episode=1000, print_freq=print_freq,  
                     log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=True
                 )
-                print('PPO...')
+                print("PPO...")
                 state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo, results_dir_ppo = run_ppo(
                     links, nb_episodes=nb_episodes, duration_episode=13000, print_freq=print_freq,  
                     log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=True
@@ -115,13 +131,23 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, prin
     print("RESULTS")
     print("=========================================")
     if algo == "compare":
-        print(colored("COMPARISON BETWEEN PPO AND ACTOR-CRITIC","blue"))
+        print(colored("COMPARISON BETWEEN PPO AND ACTOR-CRITIC", "blue"))
         print("=========================================")
         if best_ppo > best_actor:
-            print(colored("PPO","green"),"is better most of the times", colored(f"{best_ppo = }","green"), colored(f"{best_actor = }","red"))
+            print(
+                colored("PPO", "green"),
+                "is better most of the times",
+                colored(f"{best_ppo = }", "green"),
+                colored(f"{best_actor = }", "red"),
+            )
         else:
-            print(colored("Actor-Critic","green"),"is better most of the times", colored(f"{best_actor = }","green"), colored(f"{best_ppo = }","red"))
-        
+            print(
+                colored("Actor-Critic", "green"),
+                "is better most of the times",
+                colored(f"{best_actor = }", "green"),
+                colored(f"{best_ppo = }", "red"),
+            )
+
         nb_grps_min_list_ppo = np.array(nb_grps_min_list_ppo)
         nb_mod_min_list_ppo = np.array(nb_mod_min_list_ppo)
         nb_grps_min_list_actor = np.array(nb_grps_min_list_actor)
@@ -147,12 +173,12 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, prin
 
         print("=========================================")
         if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
-            print(colored("PPO","green"), "found the best solution")
+            print(colored("PPO", "green"), "found the best solution")
             state_min = state_min_ppo
             nb_grps_min = nb_grps_min_ppo
             nb_mod_min = nb_mod_min_ppo
         else:
-            print(colored("Actor-Critic","green"), "found the best solution")
+            print(colored("Actor-Critic", "green"), "found the best solution")
             state_min = state_min_actor
             nb_grps_min = nb_grps_min_actor
             nb_mod_min = nb_mod_min_actor
@@ -166,3 +192,4 @@ def batch_comparison(links, algo, nb_episodes, duration_episode, nb_repeat, prin
         return state_min, nb_grps_min, nb_mod_min, results_dir
     else:
         return state_min, nb_grps_min, nb_mod_min, results_dir_actor, results_dir_ppo
+

@@ -17,8 +17,8 @@ def generate_solution_report(state: np.ndarray, links: list, output_path: Path) 
     # store in the JSON file
     json_report: dict = {"groups": {}, "nb_groups": 0, "nb_modems": 0}
     for link_ind, coord in enumerate(state):
-        group_key: str = "group_{}".format(coord[0])
-        if group_key not in json_report["groups"].keys():
+        group_key = f"group_{coord[0]}"
+        if not group_key in json_report["groups"].keys():
             json_report["groups"][group_key]: dict = {
                 "links": [],
                 "nb_links": 0,
@@ -28,9 +28,7 @@ def generate_solution_report(state: np.ndarray, links: list, output_path: Path) 
             }
         json_report["groups"][group_key]["links"].append(link_ind)
         json_report["groups"][group_key]["nb_links"] += 1
-        json_report["groups"][group_key]["bandwidth_used"] += links[link_ind][
-            "bandwidth"
-        ]
+        json_report["groups"][group_key]["bandwidth_used"] += links[link_ind]["bandwidth"]
         json_report: dict = generate_modem_report(
             json_report=json_report,
             modem_indice=coord[1],
@@ -45,12 +43,12 @@ def generate_solution_report(state: np.ndarray, links: list, output_path: Path) 
     json_report["nb_modems"]: int = sum(
         [json_report["groups"][group]["nb_modems"] for group in json_report["groups"]]
     )
-    with open(output_path, "w") as file:
+    with open(output_path, "w", encoding="utf-8") as file:
         json.dump(json_report, file, indent=4, sort_keys=True)
 
 
 def generate_modem_report(
-        json_report: dict, modem_indice: int, group_key: str, link_ind: int, links: list
+    json_report: dict, modem_indice: int, group_key: str, link_ind: int, links: list
 ) -> dict:
     modem_key: str = "modem_{}".format(modem_indice)
     if modem_key not in json_report["groups"][group_key]["modems"].keys():
@@ -62,10 +60,10 @@ def generate_modem_report(
         }
     json_report["groups"][group_key]["modems"][modem_key]["links"].append(link_ind)
     json_report["groups"][group_key]["modems"][modem_key]["nb_links"] += 1
-    json_report["groups"][group_key]["modems"][modem_key]["binary_rate_used"] += links[
-        link_ind
-    ]["binary_rate"]
-    json_report["groups"][group_key]["modems"][modem_key]["symbol_rate_used"] += links[
-        link_ind
-    ]["symbol_rate"]
+    json_report["groups"][group_key]["modems"][modem_key]["binary_rate_used"] += links[link_ind][
+        "binary_rate"
+    ]
+    json_report["groups"][group_key]["modems"][modem_key]["symbol_rate_used"] += links[link_ind][
+        "symbol_rate"
+    ]
     return json_report

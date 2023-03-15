@@ -1,2 +1,2 @@
 from .json_report import generate_solution_report
-from .report_generation import generate_report, generate_report_runs, generate_report_comparison
+from .report_generation import generate_report, generate_report_comparison, generate_report_runs
