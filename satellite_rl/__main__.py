@@ -81,19 +81,17 @@ def main() -> None:
     if args.nb_repeat > 1 or args.algo == "compare":
         print(f"Running {args.nb_repeat} times...")
         if args.algo == "compare":
-            state_min, nb_grps_min, nb_mod_min, \
-           batch_comparison(links, args.algo, args.nb_episodes, 
-                            args.nb_timesteps, args.nb_repeat, 
-                            args.print_freq, args.log_freq,
-                            args.timeout, verbose, 
-                            generate_report_bool, filename)
+            state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, 
+                                                                  args.nb_timesteps, args.nb_repeat, 
+                                                                  args.print_freq, args.log_freq,
+                                                                  args.timeout, verbose, 
+                                                                  generate_report_bool, filename)
         else:
-            state_min, nb_grps_min, nb_mod_min, \
-            batch_comparison(links, args.algo, args.nb_episodes, 
-                            args.nb_timesteps, args.nb_repeat, 
-                            args.print_freq, args.log_freq, 
-                            args.timeout, verbose, 
-                            generate_report_bool, filename)
+            state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, 
+                                                                  args.nb_timesteps, args.nb_repeat, 
+                                                                  args.print_freq, args.log_freq, 
+                                                                  args.timeout, verbose, 
+                                                                  generate_report_bool, filename)
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
             state_min, nb_grps_min, nb_mod_min, \

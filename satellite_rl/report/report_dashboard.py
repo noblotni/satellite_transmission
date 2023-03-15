@@ -5,8 +5,6 @@ import pandas as pd
 import plotly.graph_objs as go
 import glob
 import numpy as np
-from plotly.graph_objects import Layout
-from plotly.validator_cache import ValidatorCache
 import os
 
 
