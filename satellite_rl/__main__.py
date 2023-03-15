@@ -5,6 +5,9 @@ import json
 from pathlib import Path
 import os
 from termcolor import colored
+import pandas as pd
+import subprocess
+import webbrowser
 
 from satellite_rl.comparison import batch_comparison
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
@@ -49,10 +52,8 @@ def main() -> None:
     with open(args.links_path, "r") as file:
         links: list = json.load(file)
 
-    filename = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    filename = filename.replace("/", "_")
-    filename = filename.replace(":", "_")
-    filename = filename.replace(" ", "_")
+    now = datetime.now()
+    filename = f"{args.algo}_{args.nb_repeat}_runs_{now.strftime('%Y')}-{now.strftime('%m')}-{now.strftime('%d')}-{now.strftime('%H')}-{now.strftime('%M')}-{now.strftime('%S')}"
     verbose = args.verbose
 
     if verbose == -1:
@@ -70,29 +71,29 @@ def main() -> None:
         print(f"Running {args.nb_repeat} times...")
         if args.algo == "compare":
             state_min, nb_grps_min, nb_mod_min, \
-            results_dir_list_actor, results_dir_list_ppo = batch_comparison(links, args.algo, args.nb_episodes, 
-                                                                            args.nb_timesteps, args.nb_repeat, 
-                                                                            args.print_freq, args.log_freq,
-                                                                            args.timeout, verbose, 
-                                                                            generate_report_bool, filename)
+           batch_comparison(links, args.algo, args.nb_episodes, 
+                            args.nb_timesteps, args.nb_repeat, 
+                            args.print_freq, args.log_freq,
+                            args.timeout, verbose, 
+                            generate_report_bool, filename)
         else:
             state_min, nb_grps_min, nb_mod_min, \
-            report_paths = batch_comparison(links, args.algo, args.nb_episodes, 
-                                            args.nb_timesteps, args.nb_repeat, 
-                                            args.print_freq, args.log_freq, 
-                                            args.timeout, verbose, 
-                                            generate_report_bool, filename)
+            batch_comparison(links, args.algo, args.nb_episodes, 
+                            args.nb_timesteps, args.nb_repeat, 
+                            args.print_freq, args.log_freq, 
+                            args.timeout, verbose, 
+                            generate_report_bool, filename)
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
             state_min, nb_grps_min, nb_mod_min, \
             report_path = run_actor_critic(links, args.nb_episodes, args.nb_timesteps, 
                                            args.print_freq, args.log_freq, args.timeout, 
-                                           verbose, generate_report_bool, filename, False)
+                                           verbose, generate_report_bool, filename, False, False)
         elif args.algo == "ppo":
             state_min, nb_grps_min, nb_mod_min, \
             report_path = run_ppo(links, args.nb_episodes, args.nb_timesteps, 
                                   args.print_freq, args.log_freq, args.timeout, 
-                                  verbose, generate_report_bool, filename, False)
+                                  verbose, generate_report_bool, filename, False, False)
         else:
             raise ValueError("Unknown algorithm.")
         print("=========================================")
@@ -115,55 +116,36 @@ def main() -> None:
 
     print("Solution saved in {}".format(args.output_path))
     print("=========================================")
-    instance_name = str(args.links_path).split("/")[-1].split(".")[0]
+    
+    instance_name = os.path.basename(os.path.normpath(args.links_path)).split(".")[0]
+    df_metadata = pd.DataFrame(
+        {
+            "Instance": [instance_name],
+            "Number of episodes": [args.nb_episodes],
+            "Number of timesteps": [args.nb_timesteps],
+            "Number of runs": [args.nb_repeat],
+            "Time out": [args.timeout],
+            "Number of groups": [nb_grps_min],
+            "Number of modems": [nb_mod_min],
+            "Algorithm": [args.algo],
+        }        
+    )
     if generate_report_bool:
         if args.nb_repeat > 1 and args.algo != "compare":
-            generate_report_runs(report_paths,
-                        "satellite_rl/output/"+"/".join(report_paths[0].split("/")[:-2]) + "/report.html",
-                        ("Actor-Critic Algorithm" if args.algo == "actor-critic" else "PPO Algorithm")+ f"\n{instance_name} - {args.nb_repeat} runs",
-                        {
-                            "Number of episodes": args.nb_episodes,
-                            "Number of timesteps": args.nb_timesteps,
-                            "Number of runs": args.nb_repeat,
-                            "Time out": args.timeout,
-                            "Number of groups": nb_grps_min,
-                            "Number of modems": nb_mod_min,
-                            "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                            "Number of links": len(links)
-                        }
-        )
-        elif args.algo == "compare":
+            file_path = "satellite_rl/output/"
+            file_path += "PPO_results/" if args.algo == "ppo" else "Actor-Critic_results/"
+            metadata_path = file_path + f"SatelliteRL/{filename}/metadata.csv"
+            file_path += f"SatelliteRL/{filename}/report.html"
+            df_metadata.to_csv(metadata_path, index=False)
+        elif args.algo == "compare":               
             os.makedirs("satellite_rl/output/comparison", exist_ok=True)
-            generate_report_comparison(results_dir_list_actor, results_dir_list_ppo,
-                        "satellite_rl/output/"+f"comparison/report_{args.nb_repeat}_runs_{datetime.now().strftime('%d/%m/%Y %H:%M:%S').replace('/','_').replace(':','_')}.html",
-                        f"Actor-Critic vs PPO Algorithm\n{instance_name} - {args.nb_repeat} runs",
-                        {
-                            "Number of episodes": args.nb_episodes,
-                            "Number of timesteps": args.nb_timesteps,
-                            "Number of runs": args.nb_repeat,
-                            "Time out": args.timeout,
-                            "Number of groups": nb_grps_min,
-                            "Number of modems": nb_mod_min,
-                            "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                            "Number of links": len(links)
-                        }
-        )
+            file_path = f"satellite_rl/output/comparison/SatelliteRL/{filename}/report.html"
+            df_metadata.to_csv(f"satellite_rl/output/comparison/SatelliteRL/{filename}/metadata.csv", index=False)
         else:
-            generate_report(report_path + "time_step_report.csv",
-                            report_path + "report.html",
-                            ("Actor-Critic" if args.algo == "actor-critic" else "PPO") + \
-                                f" Algorithm\n{instance_name} - {args.nb_repeat} runs",
-                            {
-                                "Number of episodes": args.nb_episodes,
-                                "Number of timesteps": args.nb_timesteps,
-                                "Number of runs": args.nb_repeat,
-                                "Time out": args.timeout,
-                                "Number of groups": nb_grps_min,
-                                "Number of modems": nb_mod_min,
-                                "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                                "Number of links": len(links)
-                            }
-            )
+            df_metadata.to_csv(report_path + "metadata.csv", index=False)
+        subprocess.call(["python", 
+                         os.path.join(os.getcwd(), r"satellite_rl\report\report_dashboard.py")])
+        webbrowser.open("http://127.0.0.1:8050/")
 
 if __name__ == "__main__":
     main()

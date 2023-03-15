@@ -8,6 +8,7 @@ import torch.nn as nn
 import logging
 from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 from termcolor import colored
+import glob
 
 logging.basicConfig(level=logging.INFO)
 
@@ -244,7 +245,7 @@ class PPO:
         )
 
 
-def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int, report: bool, filename: str, batch: bool):
+def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int, report: bool, filename: str, batch: bool, compare: bool):
     ### report variables ####
     if report:
         reward_per_time_step = []
@@ -271,7 +272,7 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
         )
 
     ####### initialize environment hyperparameters ######
-    env_name = "SatelliteEnv"
+    env_name = "SatelliteRL"
 
     max_ep_len = duration_episode  # max timesteps in one episode
     update_timestep = max_ep_len * 4  # update policy every n timesteps
@@ -289,21 +290,23 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
     action_dim = env.action_space.shape[0]
 
     ###################### report ######################
-    if report:   
-        results_dir = "satellite_rl/output/PPO_Results"
+    if report:
+        if not compare:
+            results_dir = "satellite_rl/output/PPO_Results"
+        else:
+            results_dir = "satellite_rl/output/comparison"
         os.makedirs(results_dir, exist_ok=True)
 
         results_dir = results_dir + "/" + env_name + "/"
         os.makedirs(results_dir, exist_ok=True)
 
-        if not batch:
-            results_dir = results_dir + filename + "/"
-            os.makedirs(results_dir, exist_ok=True)
+        if batch:
+            results_dir = results_dir + "-".join(filename.split("-")[:-1]) + "/"
         else:
-            results_dir = results_dir + filename.split("-")[0] + "/"
-            os.makedirs(results_dir, exist_ok=True)
-            
-            results_dir = results_dir + filename.split("-")[1] + "/"
+            results_dir = results_dir + filename + "/"
+        os.makedirs(results_dir, exist_ok=True)
+        if compare:
+            results_dir = results_dir + "PPO/"
             os.makedirs(results_dir, exist_ok=True)
     #####################################################
 
@@ -539,7 +542,17 @@ def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: in
                 "nb_group_min": nb_group_min_time_step,
             }
         )
-        df_time_step.to_csv(results_dir+"time_step_report.csv", index=False)
+        if batch:
+            files = glob.glob(results_dir + "report*.csv")
+            files.sort(key=os.path.getmtime)
+            if len(files) == 0:
+                last_file_number = 0
+            else:
+                last_file = files[-1]
+                last_file_number = int(last_file.split("_")[-1].split(".")[0]) + 1
+            df_time_step.to_csv(results_dir + f"report_{last_file_number}.csv", index=False)
+        else:
+            df_time_step.to_csv(results_dir + "report.csv", index=False)
     else:
         results_dir = None
     return env.state_min, env.nb_grps_min, env.nb_mod_min, results_dir
