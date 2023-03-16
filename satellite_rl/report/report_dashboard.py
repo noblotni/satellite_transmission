@@ -61,7 +61,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="run-selector",
                             options=options,
-                            value=options[0]["value"],
+                            value=options[-1]["value"],
                             searchable=False,
                             clearable=False,
                             className="run-dropdown",
@@ -75,7 +75,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="run-a-selector",
                             options=option_witout_comp,
-                            value=option_witout_comp[0]["value"],
+                            value=option_witout_comp[-1]["value"],
                             searchable=False,
                             clearable=False,
                             className="run-dropdown",
@@ -90,7 +90,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="run-b-selector",
                             options=option_witout_comp,
-                            value=option_witout_comp[0]["value"],
+                            value=option_witout_comp[-1]["value"],
                             searchable=False,
                             clearable=False,
                             className="run-dropdown",
