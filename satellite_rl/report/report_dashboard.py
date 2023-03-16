@@ -154,6 +154,17 @@ app.layout = html.Div(
     [Input("option-selector", "value")],
 )
 def toggle_run_selector(option):
+    """
+    Toggle the run selector.
+
+    This function controls the visibility of the different run selectors based on the selected option.
+
+    Args:
+        option (str): The selected option.
+
+    Returns:
+        dict: A dictionary containing the styles for the run selectors.
+    """
     if option == "compare":
         return {"display": "none"}, {"display": "block"}, {"display": "block"}
     else:
@@ -161,6 +172,17 @@ def toggle_run_selector(option):
 
 
 def load_metadata(path):
+    """
+    Load metadata from a CSV file located in a specified path.
+
+    This function loads a metadata file in CSV format located at the given path and returns it as a pandas DataFrame.
+
+    Args:
+        path (str or Path): The path to the directory containing the metadata.csv file.
+
+    Returns:
+        metadata (pandas.DataFrame): The metadata contained in the metadata.csv file as a DataFrame.
+    """
     path = Path(path)
     metadata_file = path / "metadata.csv"
     metadata = pd.read_csv(metadata_file, index_col=0)
@@ -168,6 +190,17 @@ def load_metadata(path):
 
 
 def load_data(run, algo):
+    """
+    Load the data from the specified run and algorithm.
+
+    Args:
+        run (str): The path to the run directory.
+        algo (str): The algorithm to load the data for. Must be one of "actor-critic", "PPO", or "compare".
+
+    Returns:
+        If `algo` is not "compare", a list of pandas dataframes loaded from the "report*.csv" files in the specified run directory.
+        If `algo` is "compare", a tuple of two lists of pandas dataframes, one for each algorithm ("actor-critic" and "PPO"), loaded from their respective "report*.csv" files in the specified run directory.
+    """
     if algo != "compare":
         dfs = [
             pd.read_csv(path).reset_index(drop=True) for path in list(Path(run).glob("report*.csv"))
@@ -187,6 +220,19 @@ def load_data(run, algo):
 
 
 def get_episode_df(dfs):
+    """
+    Groups the input DataFrames by episode and creates new DataFrames containing
+    information about the episode's reward, minimum number of modems used, and
+    minimum number of groups used.
+
+    Args:
+        dfs (list of pd.DataFrame): List of pandas DataFrames.
+
+    Returns:
+        df_episodes (list of pd.DataFrame): List of pandas DataFrames where each
+        DataFrame contains information about the episode's reward, minimum number
+        of modems used, and minimum number of groups used.
+    """
     df_episode_reward = [df.groupby("episode")["reward"].max() for df in dfs]
     df_episode_modem = [df.groupby("episode")["nb_modem_min"].min() for df in dfs]
     df_episode_group = [df.groupby("episode")["nb_group_min"].min() for df in dfs]
@@ -200,6 +246,19 @@ def get_episode_df(dfs):
 
 
 def get_compare_df(dfs_actor, dfs_ppo):
+    """
+    Returns dataframes containing the best and worst performing episodes for the actor-critic and PPO models.
+
+    Args:
+        dfs_actor (list of pandas.DataFrame): A list of dataframes containing the results of the actor-critic model.
+        dfs_ppo (list of pandas.DataFrame): A list of dataframes containing the results of the PPO model.
+
+    Returns:
+        best_df_actor (pandas.DataFrame): A dataframe containing the best performing episode for the actor-critic model.
+        best_df_ppo (pandas.DataFrame): A dataframe containing the best performing episode for the PPO model.
+        worst_df_actor (pandas.DataFrame): A dataframe containing the worst performing episode for the actor-critic model.
+        worst_df_ppo (pandas.DataFrame): A dataframe containing the worst performing episode for the PPO model.
+    """
     best_df_actor_index = np.argmin(
         [
             df.apply(lambda x: x["nb_modem_min"] + x["nb_group_min"], axis=1).min()
@@ -226,6 +285,17 @@ def get_compare_df(dfs_actor, dfs_ppo):
 
 
 def get_scatter_modem_group_reward(dfs, title, names=None):
+    """
+    Create a scatter plot of the minimum number of modems and groups per episode and the reward per episode for each dataframe in dfs.
+
+    Args:
+        dfs (list): A list of pandas dataframes containing data for each episode.
+        title (str): The title of the plot.
+        names (list, optional): A list of names to label each dataframe in dfs. Defaults to None.
+
+    Returns:
+        fig (plotly.graph_objs._figure.Figure): The scatter plot figure.
+    """
     if names is None:
         names = range(1, len(dfs) + 1)
     fig = go.Figure()
@@ -274,6 +344,17 @@ def get_scatter_modem_group_reward(dfs, title, names=None):
 
 
 def get_box_modem_group_reward(dfs_best, title, names):
+    """
+    Create a box plot figure to visualize the number of modems and groups, as well as the reward, for different runs.
+
+    Args:
+        dfs_best (dict): A dictionary containing the best dataframes for each run. Keys are run names and values are dataframes.
+        title (str): The title of the figure.
+        names (list): A list of run names to include in the figure.
+
+    Returns:
+        fig (plotly.graph_objs.Figure): A box plot figure with the specified data and layout.
+    """
     fig = go.Figure()
     for name, y_axis in zip(names, ["y1", "y2", "y3", "y4"]):
         fig.add_trace(go.Box(y=dfs_best[name], name=name, yaxis=y_axis))
@@ -306,6 +387,22 @@ def get_box_modem_group_reward(dfs_best, title, names):
     [State("option-selector", "value")],
 )
 def update_graphs(run, run_a, run_b, option):
+    """
+    Update graphs according to selected options.
+
+    Args:
+        run (str): The current run name.
+        run_a (str): The first run name to compare.
+        run_b (str): The second run name to compare.
+        option (str): The option selected on the app.
+
+    Returns:
+        list of dicts: The updated table of metadata.
+        dict: The updated style of the boxplot container graph.
+        dict: The updated scatterplot of the episode reward.
+        dict: The updated scatterplot of the timestep reward.
+        dict: The updated boxplot of the best modem and group count.
+    """
     if option == "compare":
         metadata_a = load_metadata(run_a).reset_index(drop=False)
         metadata_b = load_metadata(run_b).reset_index(drop=False)

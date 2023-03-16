@@ -1,9 +1,7 @@
 """Run the optimization algorithm."""
 import argparse
 import json
-import os
 import subprocess
-import webbrowser
 from datetime import datetime
 from pathlib import Path
 
@@ -13,12 +11,7 @@ from termcolor import colored
 from satellite_rl.comparison import batch_comparison
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
 from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
-from satellite_rl.report import (
-    generate_report,
-    generate_report_comparison,
-    generate_report_runs,
-    generate_solution_report,
-)
+from satellite_rl.report import generate_solution_report
 
 
 def main() -> None:
@@ -64,7 +57,9 @@ def main() -> None:
         links: list = json.load(file)
 
     now = datetime.now()
-    filename = f"{args.algo}_{args.nb_repeat}_runs_{now.strftime('%Y')}-{now.strftime('%m')}-{now.strftime('%d')}-{now.strftime('%H')}-{now.strftime('%M')}-{now.strftime('%S')}"
+    filename = Path(
+        f"{args.algo}_{args.nb_repeat}_runs_{now.strftime('%Y')}-{now.strftime('%m')}-{now.strftime('%d')}-{now.strftime('%H')}-{now.strftime('%M')}-{now.strftime('%S')}"
+    )
     verbose = args.verbose
 
     if verbose == -1:
@@ -110,7 +105,7 @@ def main() -> None:
             )
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(
+            state_min, nb_grps_min, nb_mod_min = run_actor_critic(
                 links,
                 args.nb_episodes,
                 args.nb_timesteps,
@@ -124,7 +119,7 @@ def main() -> None:
                 False,
             )
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(
+            state_min, nb_grps_min, nb_mod_min = run_ppo(
                 links,
                 args.nb_episodes,
                 args.nb_timesteps,
@@ -158,7 +153,7 @@ def main() -> None:
     print("Solution saved in {}".format(args.output_path))
     print("=========================================")
 
-    instance_name = os.path.basename(os.path.normpath(args.links_path)).split(".")[0]
+    instance_name = args.links_path.stem
     df_metadata = pd.DataFrame(
         {
             "Instance": [instance_name],
@@ -173,23 +168,27 @@ def main() -> None:
     )
     if generate_report_bool:
         if args.nb_repeat > 1 and args.algo != "compare":
-            file_path = "satellite_rl/output/"
-            file_path += "PPO_results/" if args.algo == "ppo" else "Actor-Critic_results/"
-            metadata_path = file_path + f"SatelliteRL/{filename}/metadata.csv"
-            file_path += f"SatelliteRL/{filename}/report.html"
+            file_path = Path("satellite_rl/output/")
+            file_path /= "PPO_results/" if args.algo == "ppo" else "Actor-Critic_results/"
+            metadata_path = file_path / f"SatelliteRL/{filename}/metadata.csv"
+            file_path /= f"SatelliteRL/{filename}/report.html"
             df_metadata.to_csv(metadata_path, index=False)
         elif args.algo == "compare":
-            os.makedirs("satellite_rl/output/comparison", exist_ok=True)
-            file_path = f"satellite_rl/output/comparison/SatelliteRL/{filename}/report.html"
+            comparison_path = Path("satellite_rl/output/comparison")
+            comparison_path.mkdir(parents=True, exist_ok=True)
+            file_path = comparison_path / f"SatelliteRL/{filename}/report.html"
             df_metadata.to_csv(
-                f"satellite_rl/output/comparison/SatelliteRL/{filename}/metadata.csv", index=False
+                comparison_path / f"SatelliteRL/{filename}/metadata.csv", index=False
             )
         else:
-            df_metadata.to_csv(report_path + "metadata.csv", index=False)
-        subprocess.call(
-            ["python", os.path.join(os.getcwd(), r"satellite_rl\report\report_dashboard.py")]
-        )
-        webbrowser.open("http://127.0.0.1:8050/")
+            metadata_path = (
+                f"satellite_rl/output/PPO_Results/SatelliteRL/{filename}/metadata.csv"
+                if args.algo == "ppo"
+                else f"satellite_rl/output/Actor-Critic_Results/SatelliteRL/{filename}/metadata.csv"
+            )
+            df_metadata.to_csv(metadata_path, index=False)
+        report_path = Path.cwd() / "satellite_rl" / "report" / "report_dashboard.py"
+        subprocess.call(["python", report_path])
 
 
 if __name__ == "__main__":
