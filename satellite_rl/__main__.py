@@ -105,32 +105,32 @@ def main() -> None:
             )
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min = run_actor_critic(
-                links,
-                args.nb_episodes,
-                args.nb_timesteps,
-                args.print_freq,
-                args.log_freq,
-                args.timeout,
-                verbose,
-                generate_report_bool,
-                filename,
-                False,
-                False,
+            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(
+                links=links,
+                nb_episoeds=args.nb_episodes,
+                nb_timesteps=args.nb_timesteps,
+                print_freq=args.print_freq,
+                log_freq=args.log_freq,
+                timeout=args.timeout,
+                verbose=verbose,
+                report=generate_report_bool,
+                filename=filename,
+                batch=False,
+                comparison=False,
             )
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min = run_ppo(
-                links,
-                args.nb_episodes,
-                args.nb_timesteps,
-                args.print_freq,
-                args.log_freq,
-                args.timeout,
-                verbose,
-                generate_report_bool,
-                filename,
-                False,
-                False,
+            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(
+                links=links,
+                nb_episodes=args.nb_episodes,
+                nb_timesteps=args.nb_timesteps,
+                print_freq=args.print_freq,
+                log_freq=args.log_freq,
+                timeout=args.timeout,
+                verbose=verbose,
+                report=generate_report_bool,
+                filename=filename,
+                batch=False,
+                comparison=False,
             )
         else:
             raise ValueError("Unknown algorithm.")
