@@ -1,0 +1,30 @@
+[
+    {
+        "bandwidth": 5330.074125456597,
+        "binary_rate": 512,
+        "symbol_rate": 5486.859084098228,
+        "inverse_binary_rate": 512,
+        "group_inverse_binary_rate": 20742.238840718648
+    },
+    {
+        "bandwidth": 11778.46124439643,
+        "binary_rate": 1024,
+        "symbol_rate": 647.7150211419988,
+        "inverse_binary_rate": 1024,
+        "group_inverse_binary_rate": 28813.208171114275
+    },
+    {
+        "bandwidth": 14577.89811860101,
+        "binary_rate": 8192,
+        "symbol_rate": 9195.175982371782,
+        "inverse_binary_rate": 8192,
+        "group_inverse_binary_rate": 31789.207561003444
+    },
+    {
+        "bandwidth": 16085.079888565131,
+        "binary_rate": 32,
+        "symbol_rate": 9080.880107874496,
+        "inverse_binary_rate": 32,
+        "group_inverse_binary_rate": 16757.1104569441
+    }
+]
