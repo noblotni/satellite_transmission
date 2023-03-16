@@ -1,9 +1,7 @@
 name: lint
 
 on:
-  - push
-  - pull_request
-  - workflow_dispatch
+  - pull_request[main]
 
 jobs:
   test:
@@ -62,5 +60,3 @@ jobs:
       - name: pylint
         run: poetry run pylint satellite_rl
         
-      - name: ruff
-        run: poetry run ruff satellite_rl

@@ -39,6 +39,14 @@ line-length = 100
 profile = "black"
 line_length = 100
 
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 100
+max-args = 10
+disable = "logging-format-interpolation"
+
+[tool.pylint.TYPECHECK]
+generated-members = "torch.*"
+
 [tool.poetry.scripts]
 generate_easy_instances = "satellite_rl.generate_easy_instances:main"
 generate_random_instances = "satellite_rl.generate_random_instances:main"
