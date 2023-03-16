@@ -49,6 +49,5 @@ disable = "logging-format-interpolation"
 generated-members = "torch.*"
 
 [tool.poetry.scripts]
-generate_easy_instances = "satellite_rl.generate_easy_instances:main"
-generate_random_instances = "satellite_rl.generate_random_instances:main"
+generate_instances = "satellite_rl.generate_instances:main"
 main = "satellite_rl.__main__:main"
