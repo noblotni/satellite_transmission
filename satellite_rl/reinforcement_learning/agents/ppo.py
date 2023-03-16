@@ -1,7 +1,7 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
 import logging
-import os
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -236,8 +236,9 @@ def run_ppo(
     timeout: int,
     verbose: int,
     report: bool,
-    filename: str,
+    filename: Path,
     batch: bool,
+    compare: bool,
 ):
     ### report variables ####
     if report:
@@ -265,7 +266,7 @@ def run_ppo(
         )
 
     ####### initialize environment hyperparameters ######
-    env_name = "SatelliteEnv"
+    env_name = "SatelliteRL"
 
     max_ep_len = duration_episode  # max timesteps in one episode
     update_timestep = max_ep_len * 4  # update policy every n timesteps
@@ -289,33 +290,36 @@ def run_ppo(
 
     ###################### report ######################
     if report:
-        results_dir = "satellite_rl/output/PPO_Results"
-        os.makedirs(results_dir, exist_ok=True)
-
-        results_dir = results_dir + "/" + env_name + "/"
-        os.makedirs(results_dir, exist_ok=True)
-
-        if not batch:
-            results_dir = results_dir + filename + "/"
-            os.makedirs(results_dir, exist_ok=True)
+        if not compare:
+            results_dir = Path("satellite_rl/output/PPO_Results")
         else:
-            results_dir = results_dir + filename.split("-")[0] + "/"
-            os.makedirs(results_dir, exist_ok=True)
+            results_dir = Path("satellite_rl/output/comparison")
 
-            results_dir = results_dir + filename.split("-")[1] + "/"
-            os.makedirs(results_dir, exist_ok=True)
+        results_dir.mkdir(parents=True, exist_ok=True)
+
+        results_dir /= env_name
+        results_dir.mkdir(parents=True, exist_ok=True)
+
+        if batch:
+            results_dir /= "-".join(str(filename).split("-")[:-1])
+        else:
+            results_dir /= filename
+        results_dir.mkdir(parents=True, exist_ok=True)
+        if compare:
+            results_dir /= "PPO"
+            results_dir.mkdir(parents=True, exist_ok=True)
     #####################################################
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir = "satellite_rl/output/PPO_logs"
-    os.makedirs(log_dir, exist_ok=True)
+    log_dir = Path("satellite_rl/output/PPO_logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
 
-    log_dir = log_dir + "/" + env_name + "/"
-    os.makedirs(log_dir, exist_ok=True)
+    log_dir /= env_name
+    log_dir.mkdir(parents=True, exist_ok=True)
 
     #### create new log file for each run
-    log_f_name = log_dir + "PPO_" + env_name + "_log_" + filename + ".csv"
+    log_f_name = log_dir / Path("PPO_" + str(env_name) + "_log_" + str(filename) + ".csv")
 
     if verbose == 2:
         print("current logging run number for " + env_name + " : ", filename)
@@ -548,7 +552,15 @@ def run_ppo(
                 "nb_group_min": nb_group_min_time_step,
             }
         )
-        df_time_step.to_csv(results_dir + "time_step_report.csv", index=False)
-    else:
-        results_dir = None
-    return env.state_min, env.nb_groups_min, env.nb_modems_min, results_dir
+        if batch:
+            files = list(Path(results_dir).glob("report*.csv"))
+            files.sort(key=lambda f: f.stat().st_mtime)
+            if len(files) == 0:
+                last_file_number = 0
+            else:
+                last_file = files[-1]
+                last_file_number = int(last_file.name.split("_")[-1].split(".")[0]) + 1
+            df_time_step.to_csv(Path(results_dir, f"report_{last_file_number}.csv"), index=False)
+        else:
+            df_time_step.to_csv(Path(results_dir, "report.csv"), index=False)
+    return env.state_min, env.nb_groups_min, env.nb_modems_min

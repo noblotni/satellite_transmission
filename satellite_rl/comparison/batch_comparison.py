@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 from termcolor import colored
@@ -21,23 +22,41 @@ def batch_comparison(
     generate_report,
     filename,
 ):
+    """
+    This function performs a comparison between reinforcement learning algorithms.
+
+    Args:
+        links (list): The list of link capacities.
+        algo (str): The algorithm to compare. It can be either "actor-critic", "ppo", or "compare".
+        nb_episodes (int): The number of episodes for each algorithm.
+        duration_episode (int): The duration of each episode for each algorithm.
+        nb_repeat (int): The number of times to repeat the experiment.
+        print_freq (int): The frequency of printing progress messages.
+        log_freq (int): The frequency of logging results.
+        timeout (int): The timeout in seconds for each algorithm.
+        verbose (int): The level of verbosity. 0 for quiet mode, 1 for normal mode, 2 for verbose mode.
+        generate_report (bool): Whether to generate a report.
+        filename (str): The name of the file to save the results.
+
+    Returns:
+        nb_grps_min_list (list): The list of the minimum number of groups for each algorithm.
+        nb_mod_min_list (list): The list of the minimum number of modules for each algorithm.
+        state_min_list (list): The list of the minimum states for each algorithm.
+    """
     print("=========================================")
     print("Starting at {}".format(datetime.now().strftime("%d/%m/%Y %H:%M:%S")))
     print("=========================================")
     nb_grps_min_list = []
     nb_mod_min_list = []
     state_min_list = []
-    results_dir_list = []
 
     if algo == "compare":
         nb_grps_min_list_actor = []
         nb_mod_min_list_actor = []
         state_min_list_actor = []
-        results_dir_list_actor = []
         nb_grps_min_list_ppo = []
         nb_mod_min_list_ppo = []
         state_min_list_ppo = []
-        results_dir_list_ppo = []
 
     best_ppo = 0
     best_actor = 0
@@ -46,7 +65,7 @@ def batch_comparison(
     if verbose == 0:
         for i in tqdm(range(nb_repeat)):
             if algo == "actor-critic":
-                state_min, nb_grps_min, nb_mod_min, results_dir = run_actor_critic(
+                state_min, nb_grps_min, nb_mod_min = run_actor_critic(
                     links,
                     nb_episodes=nb_episodes,
                     duration_episode=duration_episode,
@@ -55,16 +74,16 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
                 nb_mod_min_list.append(nb_mod_min)
-                results_dir_list.append(results_dir)
 
             elif algo == "ppo":
-                state_min, nb_grps_min, nb_mod_min, results_dir = run_ppo(
+                state_min, nb_grps_min, nb_mod_min = run_ppo(
                     links,
                     nb_episodes=nb_episodes,
                     duration_episode=duration_episode,
@@ -73,20 +92,19 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
                 nb_mod_min_list.append(nb_mod_min)
-                results_dir_list.append(results_dir)
 
             elif algo == "compare":
                 (
                     state_min_actor,
                     nb_grps_min_actor,
                     nb_mod_min_actor,
-                    results_dir_actor,
                 ) = run_actor_critic(
                     links,
                     nb_episodes=nb_episodes,
@@ -96,10 +114,11 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i) + "_actor",
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=True,
                 )
-                state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo, results_dir_ppo = run_ppo(
+                state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo = run_ppo(
                     links,
                     nb_episodes=nb_episodes,
                     duration_episode=13000,
@@ -108,18 +127,17 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i) + "_ppo",
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=True,
                 )
                 nb_grps_min_list_actor.append(nb_grps_min_actor)
                 nb_mod_min_list_actor.append(nb_mod_min_actor)
                 state_min_list_actor.append(state_min_actor)
-                results_dir_list_actor.append(results_dir_actor)
 
                 nb_grps_min_list_ppo.append(nb_grps_min_ppo)
                 nb_mod_min_list_ppo.append(nb_mod_min_ppo)
                 state_min_list_ppo.append(state_min_ppo)
-                results_dir_list_ppo.append(results_dir_ppo)
 
                 if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
                     best_ppo += 1
@@ -129,7 +147,7 @@ def batch_comparison(
         for i in range(nb_repeat):
             print(f"Repeat {i+1}/{nb_repeat}...")
             if algo == "actor-critic":
-                state_min, nb_grps_min, nb_mod_min, results_dir = run_actor_critic(
+                state_min, nb_grps_min, nb_mod_min = run_actor_critic(
                     links,
                     nb_episodes=nb_episodes,
                     duration_episode=duration_episode,
@@ -138,16 +156,16 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
                 nb_mod_min_list.append(nb_mod_min)
-                results_dir_list.append(results_dir)
 
             elif algo == "ppo":
-                state_min, nb_grps_min, nb_mod_min, results_dir = run_ppo(
+                state_min, nb_grps_min, nb_mod_min = run_ppo(
                     links,
                     nb_episodes=nb_episodes,
                     duration_episode=duration_episode,
@@ -156,13 +174,13 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
                 nb_mod_min_list.append(nb_mod_min)
-                results_dir_list.append(results_dir)
 
             elif algo == "compare":
                 print("Actor-Critic...")
@@ -170,7 +188,6 @@ def batch_comparison(
                     state_min_actor,
                     nb_grps_min_actor,
                     nb_mod_min_actor,
-                    results_dir_actor,
                 ) = run_actor_critic(
                     links,
                     nb_episodes=nb_episodes,
@@ -180,11 +197,12 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i) + "_actor",
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=True,
                 )
                 print("PPO...")
-                state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo, results_dir_ppo = run_ppo(
+                state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo = run_ppo(
                     links,
                     nb_episodes=nb_episodes,
                     duration_episode=13000,
@@ -193,18 +211,17 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i) + "_ppo",
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
+                    compare=True,
                 )
                 nb_grps_min_list_actor.append(nb_grps_min_actor)
                 nb_mod_min_list_actor.append(nb_mod_min_actor)
                 state_min_list_actor.append(state_min_actor)
-                results_dir_list_actor.append(results_dir_actor)
 
                 nb_grps_min_list_ppo.append(nb_grps_min_ppo)
                 nb_mod_min_list_ppo.append(nb_mod_min_ppo)
                 state_min_list_ppo.append(state_min_ppo)
-                results_dir_list_ppo.append(results_dir_ppo)
 
                 if nb_grps_min_ppo + nb_mod_min_ppo < nb_grps_min_actor + nb_mod_min_actor:
                     best_ppo += 1
@@ -273,6 +290,6 @@ def batch_comparison(
         nb_mod_min = nb_mod_min_list[best_index]
 
     if algo == "ppo" or algo == "actor-critic":
-        return state_min, nb_grps_min, nb_mod_min, results_dir_list
+        return state_min, nb_grps_min, nb_mod_min
     else:
-        return state_min, nb_grps_min, nb_mod_min, results_dir_list_actor, results_dir_list_ppo
+        return state_min, nb_grps_min, nb_mod_min

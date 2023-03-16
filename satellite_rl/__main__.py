@@ -1,21 +1,17 @@
 """Run the optimization algorithm."""
 import argparse
 import json
-import os
+import subprocess
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 from termcolor import colored
 
 from satellite_rl.comparison import batch_comparison
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
 from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
-from satellite_rl.report import (
-    generate_report,
-    generate_report_comparison,
-    generate_report_runs,
-    generate_solution_report,
-)
+from satellite_rl.report import generate_solution_report
 
 
 def main() -> None:
@@ -60,10 +56,10 @@ def main() -> None:
     with open(args.links_path, "r", encoding="utf-8") as file:
         links: list = json.load(file)
 
-    filename = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    filename = filename.replace("/", "_")
-    filename = filename.replace(":", "_")
-    filename = filename.replace(" ", "_")
+    now = datetime.now()
+    filename = Path(
+        f"{args.algo}_{args.nb_repeat}_runs_{now.strftime('%Y')}-{now.strftime('%m')}-{now.strftime('%d')}-{now.strftime('%H')}-{now.strftime('%M')}-{now.strftime('%S')}"
+    )
     verbose = args.verbose
 
     if verbose == -1:
@@ -80,13 +76,7 @@ def main() -> None:
     if args.nb_repeat > 1 or args.algo == "compare":
         print(f"Running {args.nb_repeat} times...")
         if args.algo == "compare":
-            (
-                state_min,
-                nb_grps_min,
-                nb_mod_min,
-                results_dir_list_actor,
-                results_dir_list_ppo,
-            ) = batch_comparison(
+            state_min, nb_grps_min, nb_mod_min = batch_comparison(
                 links,
                 args.algo,
                 args.nb_episodes,
@@ -100,7 +90,7 @@ def main() -> None:
                 filename,
             )
         else:
-            state_min, nb_grps_min, nb_mod_min, report_paths = batch_comparison(
+            state_min, nb_grps_min, nb_mod_min = batch_comparison(
                 links,
                 args.algo,
                 args.nb_episodes,
@@ -115,7 +105,7 @@ def main() -> None:
             )
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(
+            state_min, nb_grps_min, nb_mod_min = run_actor_critic(
                 links,
                 args.nb_episodes,
                 args.nb_timesteps,
@@ -126,9 +116,10 @@ def main() -> None:
                 generate_report_bool,
                 filename,
                 False,
+                False,
             )
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(
+            state_min, nb_grps_min, nb_mod_min = run_ppo(
                 links,
                 args.nb_episodes,
                 args.nb_timesteps,
@@ -138,6 +129,7 @@ def main() -> None:
                 verbose,
                 generate_report_bool,
                 filename,
+                False,
                 False,
             )
         else:
@@ -160,61 +152,35 @@ def main() -> None:
 
     print("Solution saved in {}".format(args.output_path))
     print("=========================================")
-    instance_name = str(args.links_path).split("/")[-1].split(".")[0]
+
+    instance_name = args.links_path.stem
+    df_metadata = pd.DataFrame(
+        {
+            "Instance": [instance_name],
+            "Number of episodes": [args.nb_episodes],
+            "Number of timesteps": [args.nb_timesteps],
+            "Number of runs": [args.nb_repeat],
+            "Time out": [args.timeout],
+            "Number of groups": [nb_grps_min],
+            "Number of modems": [nb_mod_min],
+            "Algorithm": [args.algo],
+        }
+    )
     if generate_report_bool:
-        if args.nb_repeat > 1 and args.algo != "compare":
-            generate_report_runs(
-                report_paths,
-                "satellite_rl/output/" + "/".join(report_paths[0].split("/")[:-2]) + "/report.html",
-                ("Actor-Critic Algorithm" if args.algo == "actor-critic" else "PPO Algorithm")
-                + f"\n{instance_name} - {args.nb_repeat} runs",
-                {
-                    "Number of episodes": args.nb_episodes,
-                    "Number of timesteps": args.nb_timesteps,
-                    "Number of runs": args.nb_repeat,
-                    "Time out": args.timeout,
-                    "Number of groups": nb_grps_min,
-                    "Number of modems": nb_mod_min,
-                    "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                    "Number of links": len(links),
-                },
-            )
-        elif args.algo == "compare":
-            os.makedirs("satellite_rl/output/comparison", exist_ok=True)
-            generate_report_comparison(
-                results_dir_list_actor,
-                results_dir_list_ppo,
-                "satellite_rl/output/"
-                + f"comparison/report_{args.nb_repeat}_runs_{datetime.now().strftime('%d/%m/%Y %H:%M:%S').replace('/','_').replace(':','_')}.html",
-                f"Actor-Critic vs PPO Algorithm\n{instance_name} - {args.nb_repeat} runs",
-                {
-                    "Number of episodes": args.nb_episodes,
-                    "Number of timesteps": args.nb_timesteps,
-                    "Number of runs": args.nb_repeat,
-                    "Time out": args.timeout,
-                    "Number of groups": nb_grps_min,
-                    "Number of modems": nb_mod_min,
-                    "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                    "Number of links": len(links),
-                },
-            )
+        if args.algo != "compare":
+            metadata_path = Path("satellite_rl/output/")
+            metadata_path /= "PPO_results/" if args.algo == "ppo" else "Actor-Critic_results/"
+            metadata_path /= f"SatelliteRL/{filename}"
+            metadata_path.mkdir(parents=True, exist_ok=True)
+            metadata_path /= "metadata.csv"
+            df_metadata.to_csv(metadata_path, index=False)
         else:
-            generate_report(
-                report_path + "time_step_report.csv",
-                report_path + "report.html",
-                ("Actor-Critic" if args.algo == "actor-critic" else "PPO")
-                + f" Algorithm\n{instance_name} - {args.nb_repeat} runs",
-                {
-                    "Number of episodes": args.nb_episodes,
-                    "Number of timesteps": args.nb_timesteps,
-                    "Number of runs": args.nb_repeat,
-                    "Time out": args.timeout,
-                    "Number of groups": nb_grps_min,
-                    "Number of modems": nb_mod_min,
-                    "Time": datetime.now().strftime("%d/%m/%Y %H:%M:%S"),
-                    "Number of links": len(links),
-                },
-            )
+            metadata_path = Path(f"satellite_rl/output/comparison/SatelliteRL/{filename}")
+            metadata_path.mkdir(parents=True, exist_ok=True)
+            metadata_path /= "metadata.csv"
+            df_metadata.to_csv(metadata_path, index=False)
+        report_path = Path.cwd() / "satellite_rl" / "report" / "report_dashboard.py"
+        subprocess.call(["python", report_path])
 
 
 if __name__ == "__main__":

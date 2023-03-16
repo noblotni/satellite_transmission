@@ -1,7 +1,7 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
 import logging
-import os
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -108,8 +108,9 @@ def run_actor_critic(
     timeout: int,
     verbose: int,
     report: bool,
-    filename: str,
-    batch: bool = False,
+    filename: Path,
+    batch: bool,
+    compare: bool,
 ):
     """Run the actor-critic algorithm to solve the optimization problem.
 
@@ -146,36 +147,38 @@ def run_actor_critic(
         print(
             "============================================================================================"
         )
-    env_name = "SatelliteEnv"
+    env_name = "SatelliteRL"
     ###################### report ######################
     if report:
-        results_dir = "satellite_rl/output/actor-critic_Results"
-        os.makedirs(results_dir, exist_ok=True)
-
-        results_dir = results_dir + "/" + env_name + "/"
-        os.makedirs(results_dir, exist_ok=True)
-
-        if not batch:
-            results_dir = results_dir + filename + "/"
-            os.makedirs(results_dir, exist_ok=True)
+        if not compare:
+            results_dir = Path("satellite_rl/output/actor-critic_Results")
         else:
-            results_dir = results_dir + filename.split("-")[0] + "/"
-            os.makedirs(results_dir, exist_ok=True)
+            results_dir = Path("satellite_rl/output/comparison")
+        results_dir.mkdir(parents=True, exist_ok=True)
 
-            results_dir = results_dir + filename.split("-")[1] + "/"
-            os.makedirs(results_dir, exist_ok=True)
+        results_dir /= env_name
+        results_dir.mkdir(parents=True, exist_ok=True)
+
+        if batch:
+            results_dir /= "-".join(str(filename).split("-")[:-1])
+        else:
+            results_dir /= filename
+        results_dir.mkdir(parents=True, exist_ok=True)
+        if compare:
+            results_dir /= "actor-critic/"
+            results_dir.mkdir(parents=True, exist_ok=True)
     #####################################################
 
     ###################### logging ######################
     #### log files for multiple runs are NOT overwritten
-    log_dir = "satellite_rl/output/actor_critic_logs"
-    os.makedirs(log_dir, exist_ok=True)
+    log_dir = Path("satellite_rl/output/actor_critic_logs")
+    log_dir.mkdir(parents=True, exist_ok=True)
 
-    log_dir = log_dir + "/" + env_name + "/"
-    os.makedirs(log_dir, exist_ok=True)
+    log_dir /= env_name
+    log_dir.mkdir(parents=True, exist_ok=True)
 
     #### create new log file for each run
-    log_f_name = log_dir + "actor_critic_" + env_name + "_log_" + filename + ".csv"
+    log_f_name = log_dir / Path("actor_critic_" + str(env_name) + "_log_" + str(filename) + ".csv")
 
     # logging file
     log_f = open(log_f_name, "w+")
@@ -183,9 +186,7 @@ def run_actor_critic(
 
     if verbose == 2:
         print("current logging run number for " + env_name + " : ", filename)
-
-        print("logging at : " + log_f_name)
-
+        print("logging at : " + str(log_f_name))
     #####################################################
 
     env: SatelliteEnv = greedy_initialisation(links=links)
@@ -377,14 +378,25 @@ def run_actor_critic(
                                 "nb_group_min": nb_group_min_time_step,
                             }
                         )
-                        df_time_step.to_csv(results_dir + "time_step_report.csv", index=False)
-                    else:
-                        results_dir = None
+                        if batch:
+                            files = list(Path(results_dir).glob("report*.csv"))
+                            files.sort(key=lambda f: f.stat().st_mtime)
+                            if len(files) == 0:
+                                last_file_number = 0
+                            else:
+                                last_file = files[-1]
+                                last_file_number = (
+                                    int(last_file.name.split("_")[-1].split(".")[0]) + 1
+                                )
+                            df_time_step.to_csv(
+                                Path(results_dir, f"report_{last_file_number}.csv"), index=False
+                            )
+                        else:
+                            df_time_step.to_csv(Path(results_dir, "report.csv"), index=False)
                     return (
                         env.state_min,
                         env.nb_modems_min,
                         env.nb_groups_min,
-                        results_dir,
                     )
         except ValueError:
             # Prevent the algorithm from stopping
@@ -418,8 +430,15 @@ def run_actor_critic(
                 "nb_group_min": nb_group_min_time_step,
             }
         )
-        df_time_step.to_csv(results_dir + "time_step_report.csv", index=False)
-    else:
-        results_dir = None
-
-    return env.state_min, env.nb_modems_min, env.nb_groups_min, results_dir
+        if batch:
+            files = list(Path(results_dir).glob("report*.csv"))
+            files.sort(key=lambda f: f.stat().st_mtime)
+            if len(files) == 0:
+                last_file_number = 0
+            else:
+                last_file = files[-1]
+                last_file_number = int(last_file.name.split("_")[-1].split(".")[0]) + 1
+            df_time_step.to_csv(Path(results_dir, f"report_{last_file_number}.csv"), index=False)
+        else:
+            df_time_step.to_csv(Path(results_dir, "report.csv"), index=False)
+    return env.state_min, env.nb_mod_min, env.nb_grps_min
