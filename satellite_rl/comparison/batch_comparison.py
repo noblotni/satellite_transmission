@@ -34,7 +34,7 @@ def batch_comparison(
         state_min_list_actor = []
         nb_grps_min_list_ppo = []
         nb_mod_min_list_ppo = []
-        state_min_list_ppo = []        
+        state_min_list_ppo = []
 
     best_ppo = 0
     best_actor = 0
@@ -44,8 +44,17 @@ def batch_comparison(
         for i in tqdm(range(nb_repeat)):
             if algo == "actor-critic":
                 state_min, nb_grps_min, nb_mod_min, results_dir = run_actor_critic(
-                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=False
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=duration_episode,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
@@ -53,21 +62,53 @@ def batch_comparison(
 
             elif algo == "ppo":
                 state_min, nb_grps_min, nb_mod_min, results_dir = run_ppo(
-                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=False
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=duration_episode,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
                 nb_mod_min_list.append(nb_mod_min)
 
             elif algo == "compare":
-                state_min_actor, nb_grps_min_actor, nb_mod_min_actor, results_dir_actor = run_actor_critic(
-                    links, nb_episodes=nb_episodes, duration_episode=1000, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=True
+                (
+                    state_min_actor,
+                    nb_grps_min_actor,
+                    nb_mod_min_actor,
+                    results_dir_actor,
+                ) = run_actor_critic(
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=1000,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=True,
                 )
                 state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo, results_dir_ppo = run_ppo(
-                    links, nb_episodes=nb_episodes, duration_episode=13000, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=True
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=13000,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=True,
                 )
                 nb_grps_min_list_actor.append(nb_grps_min_actor)
                 nb_mod_min_list_actor.append(nb_mod_min_actor)
@@ -86,9 +127,17 @@ def batch_comparison(
             print(f"Repeat {i+1}/{nb_repeat}...")
             if algo == "actor-critic":
                 state_min, nb_grps_min, nb_mod_min, results_dir = run_actor_critic(
-                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=False
-
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=duration_episode,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
@@ -96,23 +145,55 @@ def batch_comparison(
 
             elif algo == "ppo":
                 state_min, nb_grps_min, nb_mod_min, results_dir = run_ppo(
-                    links, nb_episodes=nb_episodes, duration_episode=duration_episode, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=False
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=duration_episode,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=False,
                 )
                 state_min_list.append(state_min)
                 nb_grps_min_list.append(nb_grps_min)
                 nb_mod_min_list.append(nb_mod_min)
 
             elif algo == "compare":
-                print('Actor-Critic...')
-                state_min_actor, nb_grps_min_actor, nb_mod_min_actor, results_dir_actor = run_actor_critic(
-                    links, nb_episodes=nb_episodes, duration_episode=1000, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=True
+                print("Actor-Critic...")
+                (
+                    state_min_actor,
+                    nb_grps_min_actor,
+                    nb_mod_min_actor,
+                    results_dir_actor,
+                ) = run_actor_critic(
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=1000,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=True,
                 )
                 print("PPO...")
                 state_min_ppo, nb_grps_min_ppo, nb_mod_min_ppo, results_dir_ppo = run_ppo(
-                    links, nb_episodes=nb_episodes, duration_episode=13000, print_freq=print_freq,  
-                    log_freq=log_freq, timeout=timeout, verbose=verbose, report=generate_report, filename=filename+"-"+str(i), batch=True, compare=True
+                    links,
+                    nb_episodes=nb_episodes,
+                    duration_episode=13000,
+                    print_freq=print_freq,
+                    log_freq=log_freq,
+                    timeout=timeout,
+                    verbose=verbose,
+                    report=generate_report,
+                    filename=filename + "-" + str(i),
+                    batch=True,
+                    compare=True,
                 )
                 nb_grps_min_list_actor.append(nb_grps_min_actor)
                 nb_mod_min_list_actor.append(nb_mod_min_actor)
@@ -188,8 +269,7 @@ def batch_comparison(
         nb_grps_min = nb_grps_min_list[best_index]
         nb_mod_min = nb_mod_min_list[best_index]
 
-    if algo == 'ppo' or algo == 'actor-critic':
+    if algo == "ppo" or algo == "actor-critic":
         return state_min, nb_grps_min, nb_mod_min, results_dir
     else:
         return state_min, nb_grps_min, nb_mod_min, results_dir_actor, results_dir_ppo
-

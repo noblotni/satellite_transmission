@@ -2,13 +2,13 @@
 import argparse
 import json
 import os
+import subprocess
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 
-from termcolor import colored
 import pandas as pd
-import subprocess
-import webbrowser
+from termcolor import colored
 
 from satellite_rl.comparison import batch_comparison
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
@@ -81,28 +81,62 @@ def main() -> None:
     if args.nb_repeat > 1 or args.algo == "compare":
         print(f"Running {args.nb_repeat} times...")
         if args.algo == "compare":
-            state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, 
-                                                                  args.nb_timesteps, args.nb_repeat, 
-                                                                  args.print_freq, args.log_freq,
-                                                                  args.timeout, verbose, 
-                                                                  generate_report_bool, filename)
+            state_min, nb_grps_min, nb_mod_min = batch_comparison(
+                links,
+                args.algo,
+                args.nb_episodes,
+                args.nb_timesteps,
+                args.nb_repeat,
+                args.print_freq,
+                args.log_freq,
+                args.timeout,
+                verbose,
+                generate_report_bool,
+                filename,
+            )
         else:
-            state_min, nb_grps_min, nb_mod_min = batch_comparison(links, args.algo, args.nb_episodes, 
-                                                                  args.nb_timesteps, args.nb_repeat, 
-                                                                  args.print_freq, args.log_freq, 
-                                                                  args.timeout, verbose, 
-                                                                  generate_report_bool, filename)
+            state_min, nb_grps_min, nb_mod_min = batch_comparison(
+                links,
+                args.algo,
+                args.nb_episodes,
+                args.nb_timesteps,
+                args.nb_repeat,
+                args.print_freq,
+                args.log_freq,
+                args.timeout,
+                verbose,
+                generate_report_bool,
+                filename,
+            )
     elif args.nb_repeat == 1:
         if args.algo == "actor-critic":
-            state_min, nb_grps_min, nb_mod_min, \
-            report_path = run_actor_critic(links, args.nb_episodes, args.nb_timesteps, 
-                                           args.print_freq, args.log_freq, args.timeout, 
-                                           verbose, generate_report_bool, filename, False, False)
+            state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(
+                links,
+                args.nb_episodes,
+                args.nb_timesteps,
+                args.print_freq,
+                args.log_freq,
+                args.timeout,
+                verbose,
+                generate_report_bool,
+                filename,
+                False,
+                False,
+            )
         elif args.algo == "ppo":
-            state_min, nb_grps_min, nb_mod_min, \
-            report_path = run_ppo(links, args.nb_episodes, args.nb_timesteps, 
-                                  args.print_freq, args.log_freq, args.timeout, 
-                                  verbose, generate_report_bool, filename, False, False)
+            state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(
+                links,
+                args.nb_episodes,
+                args.nb_timesteps,
+                args.print_freq,
+                args.log_freq,
+                args.timeout,
+                verbose,
+                generate_report_bool,
+                filename,
+                False,
+                False,
+            )
         else:
             raise ValueError("Unknown algorithm.")
         print("=========================================")
@@ -123,7 +157,7 @@ def main() -> None:
 
     print("Solution saved in {}".format(args.output_path))
     print("=========================================")
-    
+
     instance_name = os.path.basename(os.path.normpath(args.links_path)).split(".")[0]
     df_metadata = pd.DataFrame(
         {
@@ -135,7 +169,7 @@ def main() -> None:
             "Number of groups": [nb_grps_min],
             "Number of modems": [nb_mod_min],
             "Algorithm": [args.algo],
-        }        
+        }
     )
     if generate_report_bool:
         if args.nb_repeat > 1 and args.algo != "compare":
@@ -144,14 +178,17 @@ def main() -> None:
             metadata_path = file_path + f"SatelliteRL/{filename}/metadata.csv"
             file_path += f"SatelliteRL/{filename}/report.html"
             df_metadata.to_csv(metadata_path, index=False)
-        elif args.algo == "compare":               
+        elif args.algo == "compare":
             os.makedirs("satellite_rl/output/comparison", exist_ok=True)
             file_path = f"satellite_rl/output/comparison/SatelliteRL/{filename}/report.html"
-            df_metadata.to_csv(f"satellite_rl/output/comparison/SatelliteRL/{filename}/metadata.csv", index=False)
+            df_metadata.to_csv(
+                f"satellite_rl/output/comparison/SatelliteRL/{filename}/metadata.csv", index=False
+            )
         else:
             df_metadata.to_csv(report_path + "metadata.csv", index=False)
-        subprocess.call(["python", 
-                         os.path.join(os.getcwd(), r"satellite_rl\report\report_dashboard.py")])
+        subprocess.call(
+            ["python", os.path.join(os.getcwd(), r"satellite_rl\report\report_dashboard.py")]
+        )
         webbrowser.open("http://127.0.0.1:8050/")
 
 

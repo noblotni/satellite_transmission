@@ -1,8 +1,8 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
+import glob
 import logging
 import os
 from datetime import datetime
-import glob
 
 import numpy as np
 import pandas as pd
@@ -90,6 +90,7 @@ def sample_action(
     )
     return action, action_clipped, norm_dist
 
+
 def scale_state(env: SatelliteEnv, state: torch.Tensor):
     high_state = torch.Tensor(env.high_obs)
     norm_tensor = torch.zeros_like(state)
@@ -110,9 +111,8 @@ def run_actor_critic(
     report: bool,
     filename: str,
     batch: bool,
-    compare: bool
+    compare: bool,
 ):
-
     """Run the actor-critic algorithm to solve the optimization problem.
 
     Args:
@@ -390,7 +390,9 @@ def run_actor_critic(
                             else:
                                 last_file = files[-1]
                                 last_file_number = int(last_file.split("_")[-1].split(".")[0]) + 1
-                            df_time_step.to_csv(results_dir + f"report_{last_file_number}.csv", index=False)
+                            df_time_step.to_csv(
+                                results_dir + f"report_{last_file_number}.csv", index=False
+                            )
                         else:
                             df_time_step.to_csv(results_dir + "report.csv", index=False)
 

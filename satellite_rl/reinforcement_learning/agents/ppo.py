@@ -1,4 +1,5 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
+import glob
 import logging
 import os
 from datetime import datetime
@@ -8,7 +9,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 from termcolor import colored
-import glob
 
 from satellite_rl.reinforcement_learning.environment import SatelliteEnv
 
@@ -228,7 +228,19 @@ class PPO:
         )
 
 
-def run_ppo(links: list, nb_episodes: int, duration_episode: int, print_freq: int, log_freq: int, timeout: int, verbose: int, report: bool, filename: str, batch: bool, compare: bool):
+def run_ppo(
+    links: list,
+    nb_episodes: int,
+    duration_episode: int,
+    print_freq: int,
+    log_freq: int,
+    timeout: int,
+    verbose: int,
+    report: bool,
+    filename: str,
+    batch: bool,
+    compare: bool,
+):
     ### report variables ####
     if report:
         reward_per_time_step = []

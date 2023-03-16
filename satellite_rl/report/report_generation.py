@@ -1,8 +1,8 @@
+import glob
 import os
 import webbrowser
 
 import numpy as np
-import glob
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objs as go
@@ -113,9 +113,8 @@ def generate_report_runs(
 ):
     dfs = [
         pd.read_csv(path).reset_index(drop=True)
-        for path in glob.glob(list_csv_file_path+ "report*.csv")
+        for path in glob.glob(list_csv_file_path + "report*.csv")
     ]
-
 
     df_episode_reward = [df.groupby("episode")["reward"].max() for df in dfs]
     df_episode_modem = [df.groupby("episode")["nb_modem_min"].min() for df in dfs]
@@ -220,17 +219,21 @@ def generate_report_comparison(
     )
     worst_df_ppo = dfs_ppo[worst_df_ppo_index]
 
-    dfs_actor_best = [df.apply(lambda x: x["nb_modem_min"] + x["nb_group_min"], axis=1).min() for df in dfs_actor]
-    dfs_ppo_best = [df.apply(lambda x: x["nb_modem_min"] + x["nb_group_min"], axis=1).min() for df in dfs_ppo]
-
+    dfs_actor_best = [
+        df.apply(lambda x: x["nb_modem_min"] + x["nb_group_min"], axis=1).min() for df in dfs_actor
+    ]
+    dfs_ppo_best = [
+        df.apply(lambda x: x["nb_modem_min"] + x["nb_group_min"], axis=1).min() for df in dfs_ppo
+    ]
 
     fig = go.Figure(
         data=[go.Box(y=dfs_actor_best, name="Actor"), go.Box(y=dfs_ppo_best, name="PPO")],
-        layout=go.Layout(title="Data",
-                            xaxis=dict(title="Algorithm"),
-                            yaxis=dict(title="Nombre de modem et de groupes"))
+        layout=go.Layout(
+            title="Data",
+            xaxis=dict(title="Algorithm"),
+            yaxis=dict(title="Nombre de modem et de groupes"),
+        ),
     )
-
 
     list_dfs = [best_df_actor, worst_df_actor, best_df_ppo, worst_df_ppo]
     names = ["Best Actor", "Worst Actor", "Best PPO", "Worst PPO"]
