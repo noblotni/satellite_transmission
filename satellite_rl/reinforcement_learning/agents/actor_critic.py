@@ -441,4 +441,4 @@ def run_actor_critic(
             df_time_step.to_csv(Path(results_dir, f"report_{last_file_number}.csv"), index=False)
         else:
             df_time_step.to_csv(Path(results_dir, "report.csv"), index=False)
-    return env.state_min, env.nb_mod_min, env.nb_grps_min
+    return env.state_min, env.nb_modems_min, env.nb_groups_min
