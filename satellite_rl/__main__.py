@@ -167,25 +167,17 @@ def main() -> None:
         }
     )
     if generate_report_bool:
-        if args.nb_repeat > 1 and args.algo != "compare":
-            file_path = Path("satellite_rl/output/")
-            file_path /= "PPO_results/" if args.algo == "ppo" else "Actor-Critic_results/"
-            metadata_path = file_path / f"SatelliteRL/{filename}/metadata.csv"
-            file_path /= f"SatelliteRL/{filename}/report.html"
+        if args.algo != "compare":
+            metadata_path = Path("satellite_rl/output/")
+            metadata_path /= "PPO_results/" if args.algo == "ppo" else "Actor-Critic_results/"
+            metadata_path /= f"SatelliteRL/{filename}"
+            metadata_path.mkdir(parents=True, exist_ok=True)
+            metadata_path /= "metadata.csv"
             df_metadata.to_csv(metadata_path, index=False)
-        elif args.algo == "compare":
-            comparison_path = Path("satellite_rl/output/comparison")
-            comparison_path.mkdir(parents=True, exist_ok=True)
-            file_path = comparison_path / f"SatelliteRL/{filename}/report.html"
-            df_metadata.to_csv(
-                comparison_path / f"SatelliteRL/{filename}/metadata.csv", index=False
-            )
         else:
-            metadata_path = (
-                f"satellite_rl/output/PPO_Results/SatelliteRL/{filename}/metadata.csv"
-                if args.algo == "ppo"
-                else f"satellite_rl/output/Actor-Critic_Results/SatelliteRL/{filename}/metadata.csv"
-            )
+            metadata_path = Path(f"satellite_rl/output/comparison/SatelliteRL/{filename}")
+            metadata_path.mkdir(parents=True, exist_ok=True)
+            metadata_path /= "metadata.csv"
             df_metadata.to_csv(metadata_path, index=False)
         report_path = Path.cwd() / "satellite_rl" / "report" / "report_dashboard.py"
         subprocess.call(["python", report_path])

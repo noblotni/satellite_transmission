@@ -7,26 +7,36 @@ import plotly.graph_objs as go
 from dash import dash_table, dcc, html
 from dash.dependencies import Input, Output, State
 
-module_path = Path.cwd()
-OUTPUT_PATH = module_path / "satellite_rl" / "output"
+OUTPUT_PATH = Path.cwd() / "satellite_rl" / "output"
 ALL_ACTOR_CRITIC_RUN_PATHS = OUTPUT_PATH / "actor-critic_Results" / "SatelliteRL"
 ALL_PPO_RUN_PATHS = OUTPUT_PATH / "PPO_Results" / "SatelliteRL"
 ALL_COMPARISON_RUN_PATHS = OUTPUT_PATH / "comparison" / "SatelliteRL"
 
-all_actor_critic_runs_path = list(ALL_ACTOR_CRITIC_RUN_PATHS.glob("*"))
-all_ppo_runs_path = list(ALL_PPO_RUN_PATHS.glob("*"))
-all_comparison_runs_path = list(ALL_COMPARISON_RUN_PATHS.glob("*"))
 
-all_runs_path = all_actor_critic_runs_path + all_ppo_runs_path + all_comparison_runs_path
-options = []
-for i, path in enumerate(all_runs_path):
-    options.append({"label": path.name, "value": str(path)})
+def get_run_paths():
+    all_actor_critic_runs_path = list(ALL_ACTOR_CRITIC_RUN_PATHS.glob("*"))
+    all_ppo_runs_path = list(ALL_PPO_RUN_PATHS.glob("*"))
+    all_comparison_runs_path = list(ALL_COMPARISON_RUN_PATHS.glob("*"))
 
-all_runs_path_witout_comp = all_actor_critic_runs_path + all_ppo_runs_path
-option_witout_comp = []
-for i, path in enumerate(all_runs_path_witout_comp):
-    option_witout_comp.append({"label": path.name, "value": str(path)})
+    all_runs_path = all_actor_critic_runs_path + all_ppo_runs_path + all_comparison_runs_path
+    all_runs_path = sorted(all_runs_path, key=lambda chemin: chemin.stat().st_ctime)
+    options = []
+    for path in all_runs_path:
+        options.append({"label": path.name, "value": str(path)})
 
+    all_runs_path_witout_comp = all_actor_critic_runs_path + all_ppo_runs_path
+    all_runs_path_witout_comp = sorted(
+        all_runs_path_witout_comp, key=lambda chemin: chemin.stat().st_ctime
+    )
+    option_witout_comp = []
+    for path in all_runs_path_witout_comp:
+        option_witout_comp.append({"label": path.name, "value": str(path)})
+    if len(option_witout_comp) == 0:
+        option_witout_comp = options
+    return options, option_witout_comp
+
+
+options, option_witout_comp = get_run_paths()
 
 app = dash.Dash(__name__)
 
@@ -80,7 +90,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="run-b-selector",
                             options=option_witout_comp,
-                            value=option_witout_comp[1]["value"],
+                            value=option_witout_comp[0]["value"],
                             searchable=False,
                             clearable=False,
                             className="run-dropdown",

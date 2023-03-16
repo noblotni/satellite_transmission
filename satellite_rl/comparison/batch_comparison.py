@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 from termcolor import colored
@@ -73,7 +74,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=False,
                 )
@@ -91,7 +92,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=False,
                 )
@@ -113,7 +114,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=True,
                 )
@@ -126,7 +127,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=True,
                 )
@@ -155,7 +156,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=False,
                 )
@@ -173,7 +174,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=False,
                 )
@@ -196,7 +197,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=True,
                 )
@@ -210,7 +211,7 @@ def batch_comparison(
                     timeout=timeout,
                     verbose=verbose,
                     report=generate_report,
-                    filename=filename + "-" + str(i),
+                    filename=Path(str(filename) + "-" + str(i)),
                     batch=True,
                     compare=True,
                 )

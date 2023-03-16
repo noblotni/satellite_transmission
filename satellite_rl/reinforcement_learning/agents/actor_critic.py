@@ -160,7 +160,7 @@ def run_actor_critic(
         results_dir.mkdir(parents=True, exist_ok=True)
 
         if batch:
-            results_dir /= "-".join(filename.parts[:-1]) + "/"
+            results_dir /= "-".join(str(filename).split("-")[:-1])
         else:
             results_dir /= filename
         results_dir.mkdir(parents=True, exist_ok=True)
@@ -178,7 +178,7 @@ def run_actor_critic(
     log_dir.mkdir(parents=True, exist_ok=True)
 
     #### create new log file for each run
-    log_f_name = log_dir / ("actor_critic_" + env_name + "_log_" + filename + ".csv")
+    log_f_name = log_dir / Path("actor_critic_" + str(env_name) + "_log_" + str(filename) + ".csv")
 
     # logging file
     log_f = open(log_f_name, "w+")
