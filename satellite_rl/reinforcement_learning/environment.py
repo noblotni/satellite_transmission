@@ -1,5 +1,6 @@
 """Satellite environment."""
 from typing import Optional
+import logging
 
 import numpy as np
 from gymnasium import Env, spaces
@@ -124,7 +125,7 @@ class SatelliteEnv(Env):
             self.state_min = np.copy(self.state)
             self.nb_groups_min = self.nb_groups
             self.nb_modems_min = self.nb_modems
-        return self.state, reward, False, {}
+        return self.state, reward, False, {}, legal_move
 
     def take_action(self, action: np.ndarray):
         """Move one link from a case to another one."""
@@ -206,33 +207,26 @@ class SatelliteEnv(Env):
 
 def greedy_initialisation(links: list) -> SatelliteEnv:
     """Initilialize a rectangle environement greedily."""
+    print("Greedy initialization ...")
     env = SatelliteEnv(
         links=links,
         nb_modems_init=len(links),
         nb_groups_init=len(links),
-        nb_modems_per_group=len(links),
     )
     link_ind = 1
     group_ind = 0
     modem_ind = 1
     # Affect the links to the modems greedily
     while link_ind < env.nb_links:
-        _, reward, _, _ = env.step(np.array([link_ind, group_ind, modem_ind]))
-        if reward > 0:
+        _, _, _, _, legal_move = env.step(np.array([link_ind, group_ind, modem_ind]))
+        if legal_move:
             link_ind += 1
             modem_ind += 1
         else:
             modem_ind += 1
-
-        if modem_ind > GRP_NB_LINKS:
-            modem_ind = 0
-            group_ind += 1
-
-        if group_ind >= link_ind:
-            group_ind = link_ind
-            env.step(np.array([link_ind, group_ind, modem_ind]))
-            link_ind += 1
-            modem_ind += 1
+            if modem_ind > GRP_NB_LINKS:
+                modem_ind = 0
+                group_ind += 1
     state_init = env.state
     nb_groups = env.nb_groups
     nb_modems = env.nb_modems
@@ -240,8 +234,7 @@ def greedy_initialisation(links: list) -> SatelliteEnv:
     nb_modems_per_group = np.max(
         [len(np.where(state_init[:, 0] == i)[0]) for i in range(env.nb_links)]
     )
-    new_groups_indexes_map = {key: i for (i, key) in enumerate(np.unique(state_init[:, 0]))}
-    state_init[:, 0] = [new_groups_indexes_map[key] for key in state_init[:, 0]]
+    logging.info(f"Initialize an environment with {nb_groups} groups and {nb_modems} modems")
     return SatelliteEnv(
         links=links,
         nb_groups_init=nb_groups + 1,
@@ -249,3 +242,29 @@ def greedy_initialisation(links: list) -> SatelliteEnv:
         state_init=state_init,
         nb_modems_per_group=nb_modems_per_group,
     )
+
+
+def solve_easy_instances(links: list):
+    """Solve easy instance with a greedy policy.
+
+    Args:
+        links (list): list of links data
+
+    Returns:
+        nb_modems_min (int): optimal number of modems
+        nb_groups_min (int); otpimal number of groups
+    """
+    env = SatelliteEnv(links=links, nb_groups_init=len(links))
+    link_ind = 1
+    modem_ind = 0
+    group_ind = 0
+    while link_ind < len(links):
+        _, _, _, _, legal_move = env.step(np.array([link_ind, group_ind, modem_ind]))
+        if legal_move:
+            link_ind += 1
+        else:
+            modem_ind += 1
+            if modem_ind > GRP_NB_LINKS - 1:
+                modem_ind = 0
+                group_ind += 1
+    return env.nb_groups_min, env.nb_groups_min
