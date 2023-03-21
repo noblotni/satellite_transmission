@@ -116,7 +116,7 @@ def main() -> None:
                 report=generate_report_bool,
                 filename=filename,
                 batch=False,
-                comparison=False,
+                compare=False,
             )
         elif args.algo == "ppo":
             state_min, nb_grps_min, nb_mod_min, report_path = run_ppo(
@@ -130,7 +130,7 @@ def main() -> None:
                 report=generate_report_bool,
                 filename=filename,
                 batch=False,
-                comparison=False,
+                compare=False,
             )
         else:
             raise ValueError("Unknown algorithm.")

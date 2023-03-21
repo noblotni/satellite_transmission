@@ -211,9 +211,10 @@ class ACLogger:
 class ACReporter:
     """Report data about Actor-Crictic algorithm."""
 
-    def __init__(self, filename: str, batch: bool):
+    def __init__(self, filename: str, batch: bool, compare: bool):
         self.filename = filename
         self.batch = batch
+        self.compare = compare
         # List to keep track of variables
         self.reward_per_timestep = []
         self.timesteps = []
@@ -224,18 +225,20 @@ class ACReporter:
 
     def create_report_directory(self):
         """Create the directory where the report is saved."""
-        report_dir = config.AC_REPORT_DIR / config.ENV_NAME
-        report_dir.mkdir(parents=True, exist_ok=True)
+        if not self.compare:
+            report_dir = config.AC_REPORT_DIR / config.ENV_NAME
+        else:
+            report_dir = config.AC_COMPARISON_REPORT_DIR / config.ENV_NAME
 
         if not self.batch:
             report_dir = report_dir / self.filename
-            report_dir.mkdir(parents=True, exist_ok=True)
         else:
-            report_dir = report_dir / self.filename.split("-")[0]
-            report_dir.mkdir(parents=True, exist_ok=True)
+            report_dir /= "-".join(str(self.filename).split("-")[:-1])
 
-            report_dir = report_dir / self.filename.split("-")[1]
-            report_dir.mkdir(parents=True, exist_ok=True)
+        if self.compare:
+            report_dir /= "actor-critic"
+
+        report_dir.mkdir(parents=True, exist_ok=True)
         return report_dir
 
     def update_data(self, reward, timestep, nb_modems_min, nb_groups_min, episode):
@@ -473,7 +476,7 @@ def run_actor_critic(
     logger = ACLogger(filename=filename, print_freq=print_freq, log_freq=log_freq)
     reporter = None
     if report:
-        reporter = ACReporter(filename=filename, batch=batch)
+        reporter = ACReporter(filename=filename, batch=batch, compare=compare)
     agent = ACAgent(
         links=links,
         duration_episode=duration_episode,
