@@ -12,8 +12,8 @@ TORCH_NB_THREADS: int = 2
 # Actor-critic random seed
 AC_RANDOM_SEED: Optional[int] = None
 # Report directory
-REPORT_DIR = Path("./output/actor_critic_results")
+AC_REPORT_DIR = Path("./output/actor_critic_results")
 # Log directory
-LOG_DIR = Path("./output/actor_critic_logs")
+AC_LOG_DIR = Path("./output/actor_critic_logs")
 # Name of the environment
 ENV_NAME = "satellite_env"

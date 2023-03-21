@@ -13,7 +13,6 @@ from termcolor import colored
 from satellite_rl import config
 from satellite_rl.reinforcement_learning.environment import SatelliteEnv, greedy_initialisation
 
-logging.basicConfig(level=logging.INFO)
 # Set the number of threads for Pytorch
 torch.set_num_threads(config.TORCH_NB_THREADS)
 
@@ -97,8 +96,7 @@ class CriticNetwork(nn.Module):
 class ACLogger:
     """Display every log messages related to Actor-Critic"""
 
-    def __init__(self, verbose: int, filename: str, print_freq: int, log_freq: int):
-        self.verbose = verbose
+    def __init__(self, filename: str, print_freq: int, log_freq: int):
         self.filename = filename
         self.print_freq = print_freq
         self.log_freq = log_freq
@@ -107,7 +105,7 @@ class ACLogger:
     def create_log_file(self):
         """Init the log file where to write the logs."""
         # log files for multiple runs are NOT overwritten
-        log_dir = config.LOG_DIR / config.ENV_NAME
+        log_dir = config.AC_LOG_DIR / config.ENV_NAME
         log_dir.mkdir(parents=True, exist_ok=True)
 
         # create new log file for each run
@@ -185,8 +183,7 @@ class ACLogger:
         self, rewards_list: list, episode: int, timestep: int, elapsed_time, env: SatelliteEnv
     ):
         """Display and write logs during an episode."""
-        if self.verbose == logging.INFO:
-            self.print_dash_line()
+        if timestep % self.print_freq == 0:
             logging.info(
                 "Episode: {}, Timestep: {}, Elapsed time: {}s".format(
                     colored(episode, "blue"),
@@ -206,7 +203,6 @@ class ACLogger:
                     colored(env.nb_groups_min, "yellow"),
                 )
             )
-            self.print_dash_line()
         if timestep % self.log_freq == 0:
             self.log_file.write("{},{},{}\n".format(episode, timestep, rewards_list[-1]))
             self.log_file.flush()
@@ -228,7 +224,7 @@ class ACReporter:
 
     def create_report_directory(self):
         """Create the directory where the report is saved."""
-        report_dir = config.REPORT_DIR / config.ENV_NAME
+        report_dir = config.AC_REPORT_DIR / config.ENV_NAME
         report_dir.mkdir(parents=True, exist_ok=True)
 
         if not self.batch:
@@ -442,12 +438,12 @@ def run_actor_critic(
     duration_episode: int,
     print_freq: int,
     log_freq: int,
-    timeout: int,
-    verbose: int,
-    report: bool,
-    filename: Path,
-    batch: bool,
-    compare: bool,
+    filename: str,
+    timeout: int = 0,
+    verbose: int = 1,
+    report: bool = False,
+    batch: bool = False,
+    compare: bool = False,
 ):
     """Run the actor-critic algorithm to solve the optimization problem.
 
@@ -461,8 +457,10 @@ def run_actor_critic(
         verbose (int): level of verbosity
         timeout (int): maximal duration of the training phase
         filename (str): filename for the log and report files
-        bactch (bool): indicate whether the algorithm runs in batch
+        batch (bool): indicate whether the algorithm runs in batch
             or not
+        compare (bool): indicate whethher the algorithm is compared with
+            PPO or not
 
     Returns:
         state_min (np.ndarray): the minimal state found
@@ -471,7 +469,8 @@ def run_actor_critic(
         results_dir (Path): Path to the results directory
     """
     verbose = convert_verbosity_to_logging_level(verbose)
-    logger = ACLogger(verbose=verbose, filename=filename, print_freq=print_freq, log_freq=log_freq)
+    logging.basicConfig(level=verbose)
+    logger = ACLogger(filename=filename, print_freq=print_freq, log_freq=log_freq)
     reporter = None
     if report:
         reporter = ACReporter(filename=filename, batch=batch)
