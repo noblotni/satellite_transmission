@@ -252,9 +252,9 @@ def solve_easy_instances(links: list):
 
     Returns:
         nb_modems_min (int): optimal number of modems
-        nb_groups_min (int); otpimal number of groups
+        nb_groups_min (int): otpimal number of groups
     """
-    env = SatelliteEnv(links=links, nb_groups_init=len(links))
+    env = SatelliteEnv(links=links, nb_groups_init=len(links), nb_modems_init=len(links))
     link_ind = 1
     modem_ind = 0
     group_ind = 0
