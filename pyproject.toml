@@ -27,6 +27,7 @@ black = "^23.1.0"
 ruff = "^0.0.254"
 isort = "^5.12.0"
 pylint = "^2.17.0"
+pytest = "^7.2.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -39,8 +40,14 @@ line-length = 100
 profile = "black"
 line_length = 100
 
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length = 100
+max-args = 10
+disable = "logging-format-interpolation"
+
+[tool.pylint.TYPECHECK]
+generated-members = "torch.*"
+
 [tool.poetry.scripts]
-generate_easy_instances = "satellite_rl.generate_easy_instances:main"
-generate_random_instances = "satellite_rl.generate_random_instances:main"
-analyze_actor_critic = "satellite_rl.analyze_actor_critic:main"
+generate_instances = "satellite_rl.generate_instances:main"
 main = "satellite_rl.__main__:main"

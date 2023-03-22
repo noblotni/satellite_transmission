@@ -1,4 +1,4 @@
-name: lint
+name: tests
 
 on:
   pull_request:
@@ -52,12 +52,7 @@ jobs:
       #----------------------------------------------
       #              run quality checks suite
       #----------------------------------------------
-      - name: black
-        run: poetry run black --check satellite_rl
+      - name: pytest
+        run: poetry run pytest tests
 
-      - name: isort
-        run: poetry run isort --check satellite_rl
-
-      - name: pylint
-        run: poetry run pylint satellite_rl
         
