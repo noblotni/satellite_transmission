@@ -20,6 +20,7 @@ def main() -> None:
     parser.add_argument(
         "--algo",
         help="Optimization algorithm used. (default: actor-critic)",
+        choices=["actor-critic", "ppo", "compare"],
         type=str,
         default="actor-critic",
     )
@@ -44,10 +45,9 @@ def main() -> None:
     parser.add_argument("--log_freq", help="Log frequency.", type=int, default=1000)
     parser.add_argument(
         "--generate_report",
-        choices=["True", "False"],
+        action="store_true",
         help="Generate a report.",
-        type=str,
-        default="True",
+        type=bool,
     )
 
     args: argparse.Namespace = parser.parse_args()
@@ -65,7 +65,7 @@ def main() -> None:
     if verbose == -1:
         verbose = 0 if args.nb_repeat > 1 else 1
 
-    generate_report_bool = True if args.generate_report == "True" else False
+    generate_report_bool = args.generate_report
 
     print(
         f"Running {args.algo} algorithm..."
