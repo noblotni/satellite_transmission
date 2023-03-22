@@ -1,7 +1,6 @@
 """Run the actor-crictic algorithm to solve the optimization problem."""
 import logging
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -23,8 +22,6 @@ GAMMA: float = 0.99
 # Learning rates
 LR_ACTOR: float = 0.00001
 LR_CRITIC: float = 0.0001
-
-RANDOM_SEED: int = 0
 
 
 class ActorNetwork(nn.Module):
