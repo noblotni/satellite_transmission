@@ -47,7 +47,6 @@ def main() -> None:
         "--generate_report",
         action="store_true",
         help="Generate a report.",
-        type=bool,
     )
 
     args: argparse.Namespace = parser.parse_args()
@@ -57,9 +56,7 @@ def main() -> None:
         links: list = json.load(file)
 
     now = datetime.now()
-    filename = Path(
-        f"{args.algo}_{args.nb_repeat}_runs_{now.strftime('%Y')}-{now.strftime('%m')}-{now.strftime('%d')}-{now.strftime('%H')}-{now.strftime('%M')}-{now.strftime('%S')}"
-    )
+    filename = f"{args.algo}_{args.nb_repeat}_runs_{now.strftime('%Y')}-{now.strftime('%m')}-{now.strftime('%d')}-{now.strftime('%H')}-{now.strftime('%M')}-{now.strftime('%S')}"
     verbose = args.verbose
 
     if verbose == -1:
@@ -107,8 +104,8 @@ def main() -> None:
         if args.algo == "actor-critic":
             state_min, nb_grps_min, nb_mod_min, report_path = run_actor_critic(
                 links=links,
-                nb_episoeds=args.nb_episodes,
-                nb_timesteps=args.nb_timesteps,
+                nb_episodes=args.nb_episodes,
+                duration_episode=args.nb_timesteps,
                 print_freq=args.print_freq,
                 log_freq=args.log_freq,
                 timeout=args.timeout,

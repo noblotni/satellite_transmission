@@ -271,6 +271,7 @@ class ACAgent:
         timeout,
         logger: ACLogger,
         reporter: ACReporter,
+        greedy_init: bool,
     ):
         self.links = links
         self.duration_episode = duration_episode
@@ -278,7 +279,12 @@ class ACAgent:
         self.logger = logger
         self.reporter = reporter
         self.timeout = timeout
-        self.env: SatelliteEnv = greedy_initialisation(links=links)
+        if greedy_init:
+            self.env: SatelliteEnv = greedy_initialisation(links=links)
+        else:
+            self.env: SatelliteEnv = SatelliteEnv(
+                links=self.links, nb_groups_init=len(self.links), nb_modems_init=len(self.links)
+            )
         self.actor: ActorNetwork = ActorNetwork(obs_size=2 * len(links), action_size=3)
         self.critic: CriticNetwork = CriticNetwork(obs_size=2 * len(links))
         # Initiliaze loss
@@ -343,7 +349,7 @@ class ACAgent:
                 )
                 action, action_clipped, norm_dist = sample_action(actor=self.actor, env=self.env)
                 # Observe action and reward
-                next_state, reward, _, _ = self.env.step(action_clipped.numpy().astype(int))
+                next_state, reward, _, _, _ = self.env.step(action_clipped.numpy().astype(int))
                 cumulated_reward += reward
                 value_next_state: torch.Tensor = self.critic(
                     scale_state(env=self.env, state=torch.Tensor(next_state))
@@ -444,6 +450,7 @@ def run_actor_critic(
     report: bool = False,
     batch: bool = False,
     compare: bool = False,
+    greedy_init: bool = False,
 ):
     """Run the actor-critic algorithm to solve the optimization problem.
 
@@ -461,6 +468,7 @@ def run_actor_critic(
             or not
         compare (bool): indicate whethher the algorithm is compared with
             PPO or not
+        greedy_init (bool): initialize the environment greedily
 
     Returns:
         state_min (np.ndarray): the minimal state found
@@ -481,6 +489,7 @@ def run_actor_critic(
         logger=logger,
         reporter=reporter,
         timeout=timeout,
+        greedy_init=greedy_init,
     )
     state_min, nb_modems_min, nb_groups_min, results_dir = agent.run()
 

@@ -236,7 +236,7 @@ def run_ppo(
     timeout: int,
     verbose: int,
     report: bool,
-    filename: Path,
+    filename: str,
     batch: bool,
     compare: bool,
 ):
@@ -280,7 +280,6 @@ def run_ppo(
         links,
         nb_groups_init=len(links),
         nb_modems_init=len(links),
-        nb_modems_per_group=len(links),
     )
 
     # state space dimension
@@ -301,7 +300,7 @@ def run_ppo(
         results_dir.mkdir(parents=True, exist_ok=True)
 
         if batch:
-            results_dir /= "-".join(str(filename).split("-")[:-1])
+            results_dir /= "-".join(filename).split("-")[:-1]
         else:
             results_dir /= filename
         results_dir.mkdir(parents=True, exist_ok=True)
@@ -408,7 +407,7 @@ def run_ppo(
         for t in range(1, max_ep_len + 1):
             # select action with policy
             action = ppo_agent.select_action(state)
-            state, reward, done, _ = env.step(action)
+            state, reward, done, _, _ = env.step(action)
 
             # saving reward and is_terminals
             ppo_agent.buffer.rewards.append(reward)

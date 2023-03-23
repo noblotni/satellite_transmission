@@ -1,4 +1,5 @@
 """Generate instances."""
+from datetime import datetime
 import json
 from pathlib import Path
 import argparse
@@ -22,7 +23,13 @@ MIN_SYMBOL_RATE: int = 10
 MAX_GROUP_INV_BIN_RATE: int = 32768
 
 
+def get_date_prefix():
+    now = datetime.now()
+    return now.strftime("%Y%m%d-%H%M%s")
+
+
 def generate_random_instances(nb_instances: int, nb_links: int, folder_path: Path) -> None:
+    date_prefix = get_date_prefix()
     for i in range(nb_instances):
         links: list = []
         for _ in range(nb_links):
@@ -44,11 +51,12 @@ def generate_random_instances(nb_instances: int, nb_links: int, folder_path: Pat
                 }
             )
 
-        with open(f"{folder_path}/instance{i}.json", "w", encoding="utf-8") as file:
+        with open(f"{folder_path}/{date_prefix}_instance{i}.json", "w", encoding="utf-8") as file:
             json.dump(links, file, indent=4, sort_keys=True)
 
 
 def generate_easy_instances(nb_instances: int, nb_links: int, folder_path: Path) -> None:
+    date_prefix = get_date_prefix()
     for i in range(nb_instances):
         bandwidth: float = np.random.uniform(MIN_BANDWIDTH, MAX_BANDWIDTH)
         binary_rate: int = 2 ** (np.random.randint(low=MIN_POW_BIN_RATE, high=MAX_POW_BIN_RATE + 1))
@@ -66,7 +74,7 @@ def generate_easy_instances(nb_instances: int, nb_links: int, folder_path: Path)
             }
             for _ in range(nb_links)
         ]
-        with open(f"{folder_path}/instance{i}.json", "w", encoding="utf-8") as file:
+        with open(f"{folder_path}/{date_prefix}_instance{i}.json", "w", encoding="utf-8") as file:
             json.dump(links, file, indent=4, sort_keys=True)
 
 
