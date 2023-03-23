@@ -25,7 +25,7 @@ MAX_GROUP_INV_BIN_RATE: int = 32768
 
 def get_date_prefix():
     now = datetime.now()
-    return now.strftime("%Y%m%d-%H%M%s")
+    return now.strftime("%Y-%m-%d-%H-%M-%S")
 
 
 def generate_random_instances(nb_instances: int, nb_links: int, folder_path: Path) -> None:
@@ -83,9 +83,9 @@ def main(args) -> None:
     folder_path.mkdir(parents=True, exist_ok=True)
 
     if args.mode == "easy":
-        generate_easy_instances(nb_instances=args.nb_instances, folder_path=folder_path)
+        generate_easy_instances(nb_instances=args.nb_instances, nb_links=args.nb_links, folder_path=folder_path)
     elif args.mode == "random":
-        generate_random_instances(nb_instances=args.nb_instances, folder_path=folder_path)
+        generate_random_instances(nb_instances=args.nb_instances, nb_links=args.nb_links, folder_path=folder_path)
 
 
 if __name__ == "__main__":
@@ -102,6 +102,7 @@ if __name__ == "__main__":
         choices=["random", "easy"],
         default="random",
         help="Type of instance (default: random)",
+        dest="mode",
     )
     args = parser.parse_args()
     main(args)
