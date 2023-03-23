@@ -22,4 +22,4 @@ AC_COMPARISON_REPORT_DIR = Path(
 # Log directory
 AC_LOG_DIR = Path(os.environ.get("AC_LOG_DIR", default="./satellite_rl/output/actor_critic_logs"))
 # Name of the environment
-ENV_NAME = os.environ.get(os.environ.get("ENV_NAME", default="SatelliteRL"))
+ENV_NAME = os.environ.get("ENV_NAME", default="SatelliteRL")
