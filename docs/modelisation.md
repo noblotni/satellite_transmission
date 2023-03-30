@@ -16,7 +16,7 @@ infinie. On note $\mathcal{M}$ l'ensemble des modems. Cet ensemble est en
 bijection avec $\mathbb{N}^2$. Soit $m_{ij}$ un modem de $\mathcal{M}$,
 $m_{ij}$ est le j-ième modem du i-ième groupe. Formellement:
 
-$$\mathcal{M} = \\{m_{ij}, i \in \mathbb{N}^*, j \in \mathbb{N}\\}$$
+$$\mathcal{M} = \\{m_{ij}, i \in \mathbb{N}^*, j \in \mathbb{N}^* \\}$$
 
 L'objectif décrit précédemment revient à construire une application
 $\phi :  \mathcal{L} \rightarrow \mathcal{M}$ tel que l'ensemble image $\phi(\mathcal{L})$
@@ -27,7 +27,7 @@ $$\forall i \in \\{1,...,N \\}, \phi_0(l_i) = m_{i1}$$
 
 Comme on cherche une application avec le cardinal de l'ensemble image le
 plus petit possible, on peut restreindre l'ensemble d'arrivée de $\phi$
-à $\\{m_{ij},  (i,j) \in \{1,...,N\}^2 \\}$.
+à $\\{m_{ij},  (i,j) \in \\{1,...,N\\}^2 \\}$.
 
 Mise sous forme d'un problème de programmation linéaire
 -------------------------------------------------------
@@ -137,7 +137,7 @@ Mise sous forme d'un processus de décision markovien
 Dans notre cas, l'environnement correspond à la grille bidimensionnelle
 sur laquelle les liaisons sont positionnées. L'état de la grille
 correspond à l'ensemble image
-$\phi_0(\mathcal{L}) = \{m_{i1}, \forall i \in \{1,...,N\}\}$.
+$\phi_0(\mathcal{L}) = \{m_{i1}, \forall i \in \\{1,...,N\\}\}$.
 
 ![fig1](images/grid1.png)
 
