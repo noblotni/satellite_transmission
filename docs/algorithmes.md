@@ -48,7 +48,7 @@ retourne deux vecteurs : un vecteur de 3 réels $\mu(s)$ et un vecteur de
 action choisie aléatoirement selon la loi normale
 $\mathcal{N}(\mu(s), \text{diag}(\sigma(s)))$ (où
 $\text{diag}(\sigma(s))$ est la matrice diagonale contenant les
-coefficients de $\sigma(s)$). On remarque que la distribution est
+coefficients de $\sigma(s)$ ). On remarque que la distribution est
 continue alors que l'environnement est discret. En effet, le nombre
 d'actions à considérer pour chaque est état est de l'ordre de $N^3$. Le
 choix d'une distribution de probabilité discrète nécessiterait $N^3$
