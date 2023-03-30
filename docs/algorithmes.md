@@ -48,7 +48,7 @@ retourne deux vecteurs : un vecteur de 3 réels $\mu(s)$ et un vecteur de
 action choisie aléatoirement selon la loi normale
 $\mathcal{N}(\mu(s), \text{diag}(\sigma(s)))$ (où
 $\text{diag}(\sigma(s))$ est la matrice diagonale contenant les
-coefficients de $\sigma(s)$). On remarque que la distribution est
+coefficients de $\sigma(s)$ ). On remarque que la distribution est
 continue alors que l'environnement est discret. En effet, le nombre
 d'actions à considérer pour chaque est état est de l'ordre de $N^3$. Le
 choix d'une distribution de probabilité discrète nécessiterait $N^3$
@@ -73,11 +73,14 @@ Les poids des réseaux sont mises à jour par un algorithme de
 rétropopagation du gradient. La fonction de coût à minimiser pour le
 critique (pour tout $s \in \mathcal{S}$ et pour tout $a \in \mathcal{A}$)
 est :
+
 $$L_{critique}(\theta, w, s,a) = \frac{1}{2}\left(r(s,a) + \gamma\hat{v}_w(T(s,a)) - \hat{v}_w(s)\right)^2$$
+
 où $\gamma$ est la facteur d'atténuation des récompenses futurs. C'est
 un des hyperparamètres de l'algorithme. Sa valeur est fixée à $0.99$. La
 fonction de coût de l'acteur (pour tout $s \in \mathcal{S}$ et pour tout
 $a \in \mathcal{S}$) est :
+
 $$L_{acteur}(\theta, w, s,a) = -\log(\pi_\theta(a|s))L_{critique}(\theta, w, s,a)$$
 
 où $\pi_\theta(.|s)$ est la densité de la distribution de probabilité
@@ -87,6 +90,7 @@ façon suivante :
 $$\begin{aligned}
     \theta &\leftarrow  \theta - \alpha_\theta \nabla_\theta L_{acteur}\left(\theta, w,s,a\right) \\
     w & \leftarrow w - \alpha_w \nabla_{w}L_{critique}\left(\theta, w,s,a\right)\end{aligned}$$
+
 où $\alpha_\theta$ et $\alpha_w$ sont respectivement les taux
 d'apprentissage de l'acteur et du critique. Ces hyperparamètres
 contrôlent la vitesse d'apprentissage des réseaux. Ils sont fixés à une

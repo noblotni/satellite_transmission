@@ -5,7 +5,7 @@ Modélisation générale
 ---------------------
 
 On s'intéresse à un ensemble de $N$ liaisons satellite noté
-$\mathcal{L}=\{l_1, ..., l_N\}$. L'objectif est d'affecter ces liaisons à des
+$\mathcal{L}=\\{l_1, ..., l_N\\}$. L'objectif est d'affecter ces liaisons à des
 modems eux-mêmes répartis dans des groupes de modems. On fait
 l'hypothèse que l'on dispose d'un nombre infini de modems identiques et
 on veut minimiser le nombre de groupes et de modems utilisés tout en
@@ -16,18 +16,18 @@ infinie. On note $\mathcal{M}$ l'ensemble des modems. Cet ensemble est en
 bijection avec $\mathbb{N}^2$. Soit $m_{ij}$ un modem de $\mathcal{M}$,
 $m_{ij}$ est le j-ième modem du i-ième groupe. Formellement:
 
-$$\mathcal{M} = \{m_{ij}, i\in \mathbb{N^*}, j \in \mathbb{N^*}\}$$
+$$\mathcal{M} = \\{m_{ij} | i \in \mathbb{N}, i \geq 1 ,j \in \mathbb{N}, j \geq 1  \\}$$
 
 L'objectif décrit précédemment revient à construire une application
 $\phi :  \mathcal{L} \rightarrow \mathcal{M}$ tel que l'ensemble image $\phi(\mathcal{L})$
 soit de cardinal minimal. Une solution triviale est la suivante: on
 prend l'application $\phi$ telle que :
 
-$$\forall i \in \{1,...,N\}, \phi_0(l_i) = m_{i1}$$
+$$\forall i \in \\{1,...,N \\}, \phi_0(l_i) = m_{i1}$$
 
 Comme on cherche une application avec le cardinal de l'ensemble image le
 plus petit possible, on peut restreindre l'ensemble d'arrivée de $\phi$
-à $\mathcal{M}_N = \{m_{ij},  (i,j) \in \{1,...,N\}^2 \}$.
+à $\\{m_{ij},  (i,j) \in \\{1,...,N\\}^2 \\}$.
 
 Mise sous forme d'un problème de programmation linéaire
 -------------------------------------------------------
@@ -72,28 +72,28 @@ Les variables de décision sont :
 Contraintes sur les modems :
 
 -   Chaque modem ne doit pas contenir plus de $N_m$ liaisons :
-    $$\forall j \in \{1,...,N\}, \forall k \in \{1,...,N\} \sum_{i=1}^N X_{ijk}\leq N_m$$
+    $$\forall j \in \\{1,...,N\\}, \forall k \in \\{1,...,N\\} \sum_{i=1}^N X_{ijk}\leq N_m$$
 
 -   La somme des débits binaires des liaisons d'un même modem ne doit
     pas excéder $Q_B$:
-    $$\forall j \in \{1,...,N\}, \forall k \in \{1,...,N\}, \sum_{i=1}^N q_B[i]X_{ijk} \leq Q_B$$
+    $$\forall j \in \\{1,...,N\\}, \forall k \in \\{1,...,N\\}, \sum_{i=1}^N q_B[i]X_{ijk} \leq Q_B$$
 
 -   La somme des débits symbole des liaisons d'un même modem ne doit pas
     dépasser $Q_S$:
-    $$\forall j \in \{1,...,N\}, \forall k \in \{1,...,N\}, \sum_{i=1}^Nq_S[i]X_{ijk} \leq Q_S$$
+    $$\forall j \in \\{1,...,N\\}, \forall k \in \\{1,...,N\\}, \sum_{i=1}^Nq_S[i]X_{ijk} \leq Q_S$$
 
 Contraintes sur les groupes :
 
 -   Chaque groupe ne doit pas contenir plus de $N_g$ liaisons :
-    $$\forall j \in \{1,..., N\}, \forall k \in \{1,...,N\}, \sum_{i=1}^N X_{ijk} \leq N_g$$
+    $$\forall j \in \\{1,..., N\\}, \forall k \in \\{1,...,N\\}, \sum_{i=1}^N X_{ijk} \leq N_g$$
 
 -   La somme des bandes passantes des liaisons d'un même groupe ne doit
     pas dépasser la bande passante maximale $B_G$:
-    $$\forall j \in \{1,...,N\}, \forall k \in \{1,...,N\}, \sum_{i=1}^N b[i]X_{ijk} \leq B_G$$
+    $$\forall j \in \\{1,...,N\\}, \forall k \in \\{1,...,N\\}, \sum_{i=1}^N b[i]X_{ijk} \leq B_G$$
 
 -   La somme des débits inverses doit être inférieure au minimum des
     débits inverses maximaux des liaisons présentes dans le groupe :
-    $$\forall l \in \{1,...,N\}, \forall j \in \{1, ..., N\}, \sum_{i=1}^N\sum_{k=1}^Nq_{BI}[i]X_{ijk} \leq \sum_{k=1}^NQ_{BI}[l]X_{ljk}$$
+    $$\forall l \in \\{1,...,N\\}, \forall j \in \\{1, ..., N\\}, \sum_{i=1}^N\sum_{k=1}^Nq_{BI}[i]X_{ijk} \leq \sum_{k=1}^NQ_{BI}[l]X_{ljk}$$
 
 ### Objectif
 
@@ -137,19 +137,19 @@ Mise sous forme d'un processus de décision markovien
 Dans notre cas, l'environnement correspond à la grille bidimensionnelle
 sur laquelle les liaisons sont positionnées. L'état de la grille
 correspond à l'ensemble image
-$\phi_0(\mathcal{L}) = \{m_{i1}, \forall i \in \{1,...,N\}\}$.
+$\phi_0(\mathcal{L}) = \{m_{i1}, \forall i \in \\{1,...,N\\}\}$.
 
 ![fig1](images/grid1.png)
 
 Dans ce cas, le processus de décision markovien est défini par:
 
--   $\mathcal{S} = \{B \subset \{1,...,N\}^2, \left|B\right| = N\}$,
-    l'ensemble des états qui correspond aux parties de $\{1,...,N\}^2$
+-   $\mathcal{S} = \\{B \subset \\{1,...,N\\}^2, \left|B\right| = N\\}$,
+    l'ensemble des états qui correspond aux parties de $\\{1,...,N\\}^2$
     de cardinal $N$. Un état est la liste des $N$ coordonnées des
     liaisons sur la grille.
 
--   $\mathcal{A} = \{1,..,N\}^3$, l'ensemble des actions. Une action est
-    définie par un triplet $(i,j,k) \in \{1,...,N\}^3$ car on choisit
+-   $\mathcal{A} = \\{1,..,N\\}^3$, l'ensemble des actions. Une action est
+    définie par un triplet $(i,j,k) \in \\{1,...,N\\}^3$ car on choisit
     une liaison $i$ qui est affectée au modem $(j, k)$.
 
 -   La fonction de transition $T$ est la fonction qui à un état $s$ et
@@ -170,14 +170,9 @@ Dans ce cas, le processus de décision markovien est défini par:
     l'action $a$ et à l'état $s$. La fonction de récompense est définie
     par: 
     
-    $$r(s,a) = \begin{cases}
-            -10\Delta(s,a)\frac{N}{\sqrt{u(T(s,a))g(T(s,a))}} & \text{si } \Delta(s,a) > 0 \\
-            & \\
-            -\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} & \text{si } \Delta(s,a) = 0 \\
-            & \\
-            -\Delta(s,a)\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} & \text{si } \Delta(s,a) < 0 
-            
-        \end{cases}$$
+    - $$r(s,a) = 10\Delta(s,a)\frac{N}{\sqrt{u(T(s,a))g(T(s,a))}} \text{si } \Delta(s,a) > 0 $$
+    - $$r(s,a) = -\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} \text{si } \Delta(s,a) = 0 $$
+    - $$r(s,a) =  -\Delta(s,a)\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N}  \text{si } \Delta(s,a) < 0$$
 
 Illustrons avec un exemple.
 
