@@ -175,8 +175,7 @@ Dans ce cas, le processus de décision markovien est défini par:
             & & \\
             r(s,a) = &-\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} & \text{si } \Delta(s,a) = 0 \\
             & & \\
-            r(s,a) = & -\Delta(s,a)\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} & \text{si } \Delta(s,a) < 0 
-         \end{aligned}$$
+            r(s,a) = & -\Delta(s,a)\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} & \text{si } \Delta(s,a) < 0\end{aligned}$$
 
 Illustrons avec un exemple.
 
