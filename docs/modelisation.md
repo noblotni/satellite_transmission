@@ -16,7 +16,7 @@ infinie. On note $\mathcal{M}$ l'ensemble des modems. Cet ensemble est en
 bijection avec $\mathbb{N}^2$. Soit $m_{ij}$ un modem de $\mathcal{M}$,
 $m_{ij}$ est le j-ième modem du i-ième groupe. Formellement:
 
-$$\mathcal{M} = \\{m_{ij}, i\in \mathbb{N}^{*}, j \in \mathbb{N}^{*}\\}$$
+$$\mathcal{M} = \\{m_{ij}, i \in \mathbb{N}^*, j \in \mathbb{N}\\}$$
 
 L'objectif décrit précédemment revient à construire une application
 $\phi :  \mathcal{L} \rightarrow \mathcal{M}$ tel que l'ensemble image $\phi(\mathcal{L})$
@@ -27,7 +27,7 @@ $$\forall i \in \\{1,...,N \\}, \phi_0(l_i) = m_{i1}$$
 
 Comme on cherche une application avec le cardinal de l'ensemble image le
 plus petit possible, on peut restreindre l'ensemble d'arrivée de $\phi$
-à $\mathcal{M}_N = \\{m_{ij},  (i,j) \in \{1,...,N\}^2 \\}$.
+à $\\{m_{ij},  (i,j) \in \{1,...,N\}^2 \\}$.
 
 Mise sous forme d'un problème de programmation linéaire
 -------------------------------------------------------
@@ -143,7 +143,7 @@ $\phi_0(\mathcal{L}) = \{m_{i1}, \forall i \in \{1,...,N\}\}$.
 
 Dans ce cas, le processus de décision markovien est défini par:
 
--   $\mathcal{S} = \\{B \subset \{1,...,N\}^2, \left|B\right| = N\\}$,
+-   $\mathcal{S} = \\{B \subset \\{1,...,N\\}^2, \left|B\right| = N\\}$,
     l'ensemble des états qui correspond aux parties de $\\{1,...,N\\}^2$
     de cardinal $N$. Un état est la liste des $N$ coordonnées des
     liaisons sur la grille.
@@ -170,12 +170,9 @@ Dans ce cas, le processus de décision markovien est défini par:
     l'action $a$ et à l'état $s$. La fonction de récompense est définie
     par: 
     
-    $$\begin{aligned}
-            r(s,a) = &-10\Delta(s,a)\frac{N}{\sqrt{u(T(s,a))g(T(s,a))}} & \text{si } \Delta(s,a) > 0 \\
-            & & \\
-            r(s,a) = &-\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} & \text{si } \Delta(s,a) = 0 \\
-            & & \\
-            r(s,a) = & -\Delta(s,a)\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} & \text{si } \Delta(s,a) < 0\end{aligned}$$
+    - $$r(s,a) = 10\Delta(s,a)\frac{N}{\sqrt{u(T(s,a))g(T(s,a))}} \text{si } \Delta(s,a) > 0 $$
+    - $$r(s,a) = -\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N} \text{si } \Delta(s,a) = 0 $$
+    - $$r(s,a) =  -\Delta(s,a)\frac{\sqrt{u(T(s,a))g(T(s,a))}}{N}  \text{si } \Delta(s,a) < 0$$
 
 Illustrons avec un exemple.
 
