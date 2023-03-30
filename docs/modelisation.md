@@ -16,7 +16,7 @@ infinie. On note $\mathcal{M}$ l'ensemble des modems. Cet ensemble est en
 bijection avec $\mathbb{N}^2$. Soit $m_{ij}$ un modem de $\mathcal{M}$,
 $m_{ij}$ est le j-ième modem du i-ième groupe. Formellement:
 
-$$\mathcal{M} = \\{m_{ij}, i \in \mathbb{N}^*, j \in \mathbb{N}^* \\}$$
+$$\mathcal{M} = \\{m_{ij} | i \in \mathbb{N}, i \geq 1 ,j \in \mathbb{N}, j \geq 1  \\}$$
 
 L'objectif décrit précédemment revient à construire une application
 $\phi :  \mathcal{L} \rightarrow \mathcal{M}$ tel que l'ensemble image $\phi(\mathcal{L})$
