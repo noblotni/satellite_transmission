@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import dash
+import dash 
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -8,7 +8,7 @@ from dash import dash_table, dcc, html
 from dash.dependencies import Input, Output, State
 
 OUTPUT_PATH = Path.cwd() / "satellite_rl" / "output"
-ALL_ACTOR_CRITIC_RUN_PATHS = OUTPUT_PATH / "actor-critic_Results" / "SatelliteRL"
+ALL_ACTOR_CRITIC_RUN_PATHS = OUTPUT_PATH / "actor_critic_results" / "SatelliteRL"
 ALL_PPO_RUN_PATHS = OUTPUT_PATH / "PPO_Results" / "SatelliteRL"
 ALL_COMPARISON_RUN_PATHS = OUTPUT_PATH / "comparison" / "SatelliteRL"
 
@@ -42,6 +42,11 @@ app = dash.Dash(__name__)
 
 app.layout = html.Div(
     [
+        dcc.Interval(
+            id='interval-component',
+            interval=1*1000, # in milliseconds
+            n_intervals=0
+        ),
         html.Div(
             [
                 html.H2("Report dashboard"),
@@ -153,6 +158,9 @@ app.layout = html.Div(
     ],
     className="container",
 )
+
+
+
 
 
 @app.callback(
@@ -429,8 +437,8 @@ def update_graphs(run, run_a, run_b, option):
     Update graphs according to selected options.
 
     Args:
-        run (str): The current run name.
-        run_a (str): The first run name to compare.
+        run (str): The current run name. 
+        run_a (str): The first run name to compare. 
         run_b (str): The second run name to compare.
         option (str): The option selected on the app.
 

@@ -493,4 +493,4 @@ def run_actor_critic(
     )
     state_min, nb_modems_min, nb_groups_min, results_dir = agent.run()
 
-    return state_min, nb_modems_min, nb_groups_min, results_dir
+    return state_min, nb_modems_min, nb_groups_min

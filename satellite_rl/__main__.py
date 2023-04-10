@@ -188,14 +188,13 @@ def main() -> None:
                 )
             if args.algo != "compare":
                 metadata_dir = Path("satellite_rl/output/")
-                metadata_dir /= "PPO_results/" if args.algo == "ppo" else "Actor-Critic_results/"
+                metadata_dir /= "PPO_results/" if args.algo == "ppo" else "actor_critic_results/"
                 metadata_dir /= f"SatelliteRL/{filename}"
                 metadata_dir.mkdir(parents=True, exist_ok=True)
                 metadata_path = metadata_dir / "metadata.csv"
                 df_metadata.to_csv(metadata_path, index=False)
                 opt_path = metadata_dir / "optimal_solution.csv"
                 df_opt.to_csv(opt_path, index=False)
-
             else:
                 metadata_dir = Path(f"satellite_rl/output/comparison/SatelliteRL/{filename}")
                 metadata_dir.mkdir(parents=True, exist_ok=True)
