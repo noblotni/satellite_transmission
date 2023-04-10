@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import dash 
+import dash
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
@@ -42,11 +42,7 @@ app = dash.Dash(__name__)
 
 app.layout = html.Div(
     [
-        dcc.Interval(
-            id='interval-component',
-            interval=1*1000, # in milliseconds
-            n_intervals=0
-        ),
+        dcc.Interval(id="interval-component", interval=1 * 1000, n_intervals=0),  # in milliseconds
         html.Div(
             [
                 html.H2("Report dashboard"),
@@ -160,9 +156,6 @@ app.layout = html.Div(
 )
 
 
-
-
-
 @app.callback(
     [
         Output("run-selector-container", "style"),
@@ -244,7 +237,7 @@ def load_data(run, algo):
             for path in list(Path(run, "PPO").glob("report*.csv"))
         ]
         return dfs_actor, dfs_ppo
-        
+
 
 def get_episode_df(dfs):
     """
@@ -354,7 +347,7 @@ def get_scatter_modem_group_reward(dfs, title, best=None, names=None):
             fig.add_trace(
                 go.Scatter(
                     x=df.index,
-                    y=[best.iloc[0]["Number of modems"]]*df.index.size,
+                    y=[best.iloc[0]["Number of modems"]] * df.index.size,
                     name="best_nb_modem_min_" + str(name),
                     mode="lines",
                     yaxis="y1",
@@ -363,7 +356,7 @@ def get_scatter_modem_group_reward(dfs, title, best=None, names=None):
             fig.add_trace(
                 go.Scatter(
                     x=df.index,
-                    y=[best.iloc[0]["Number of groups"]]*df.index.size,
+                    y=[best.iloc[0]["Number of groups"]] * df.index.size,
                     name="best_nb_group_min_" + str(name),
                     mode="lines",
                     yaxis="y1",
@@ -437,8 +430,8 @@ def update_graphs(run, run_a, run_b, option):
     Update graphs according to selected options.
 
     Args:
-        run (str): The current run name. 
-        run_a (str): The first run name to compare. 
+        run (str): The current run name.
+        run_a (str): The first run name to compare.
         run_b (str): The second run name to compare.
         option (str): The option selected on the app.
 
@@ -549,12 +542,16 @@ def update_graphs(run, run_a, run_b, option):
             dfs_ep = [best_df_actor_ep, best_df_ppo_ep, worst_df_actor_ep, worst_df_ppo_ep]
 
             fig1 = get_scatter_modem_group_reward(
-                dfs_ep, "Episode", names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"],
-                best=best_solution
+                dfs_ep,
+                "Episode",
+                names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"],
+                best=best_solution,
             )
             fig2 = get_scatter_modem_group_reward(
-                dfs, "Timestep", names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"], 
-                best=best_solution
+                dfs,
+                "Timestep",
+                names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"],
+                best=best_solution,
             )
 
             dfs_best = pd.DataFrame(

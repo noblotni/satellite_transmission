@@ -11,8 +11,9 @@ from termcolor import colored
 from satellite_rl.comparison import batch_comparison
 from satellite_rl.reinforcement_learning.agents.actor_critic import run_actor_critic
 from satellite_rl.reinforcement_learning.agents.ppo import run_ppo
-from satellite_rl.report import generate_solution_report, launch_server
 from satellite_rl.reinforcement_learning.environment import solve_easy_instances
+from satellite_rl.report import generate_solution_report, launch_server
+
 
 def main() -> None:
     parser: argparse.ArgumentParser = argparse.ArgumentParser("Run the optimization algorithm.")
@@ -218,6 +219,7 @@ def main() -> None:
             print("Open http://localhost:8050 in your browser.")
             print("=========================================")
             webbrowser.open("http://localhost:8050")
+
 
 if __name__ == "__main__":
     main()

@@ -5,9 +5,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import torch
-from torch import nn
-from torch import optim
 from termcolor import colored
+from torch import nn, optim
 
 from satellite_rl import config
 from satellite_rl.reinforcement_learning.environment import SatelliteEnv, greedy_initialisation

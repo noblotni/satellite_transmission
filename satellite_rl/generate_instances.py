@@ -1,8 +1,8 @@
 """Generate instances."""
-from datetime import datetime
-import json
-from pathlib import Path
 import argparse
+import json
+from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 
@@ -83,9 +83,13 @@ def main(args) -> None:
     folder_path.mkdir(parents=True, exist_ok=True)
 
     if args.mode == "easy":
-        generate_easy_instances(nb_instances=args.nb_instances, nb_links=args.nb_links, folder_path=folder_path)
+        generate_easy_instances(
+            nb_instances=args.nb_instances, nb_links=args.nb_links, folder_path=folder_path
+        )
     elif args.mode == "random":
-        generate_random_instances(nb_instances=args.nb_instances, nb_links=args.nb_links, folder_path=folder_path)
+        generate_random_instances(
+            nb_instances=args.nb_instances, nb_links=args.nb_links, folder_path=folder_path
+        )
 
 
 if __name__ == "__main__":
