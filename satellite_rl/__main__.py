@@ -46,17 +46,15 @@ def main() -> None:
     parser.add_argument("--log_freq", help="Log frequency.", type=int, default=1000)
     parser.add_argument(
         "--generate_report",
-        choices=["True", "False"],
+        action=argparse.BooleanOptionalAction,
         help="Generate a report.",
-        type=str,
-        default="True",
+        default=True,
     )
     parser.add_argument(
         "--easy_instances",
-        choices=["True", "False"],
+        action=argparse.BooleanOptionalAction,
         help="Solve easy instances.",
-        type=str,
-        default="False",
+        default=False,
     )
     parser.add_argument(
         "--type", help="Train or evaluate.", type=str, choices=["train", "eval"], default="train"
@@ -76,7 +74,7 @@ def main() -> None:
         if verbose == -1:
             verbose = 0 if args.nb_repeat > 1 else 1
 
-        generate_report_bool = True if args.generate_report == "True" else False
+        generate_report_bool = args.generate_report
 
         print(
             f"Running {args.algo} algorithm..."
@@ -178,7 +176,7 @@ def main() -> None:
             }
         )
         if generate_report_bool:
-            if args.easy_instances == "True":
+            if args.easy_instances:
                 nb_mod_opt, nb_grps_opt = solve_easy_instances(links)
                 df_opt = pd.DataFrame(
                     {
@@ -195,7 +193,7 @@ def main() -> None:
                 metadata_path = metadata_dir / "metadata.csv"
                 df_metadata.to_csv(metadata_path, index=False)
                 opt_path = metadata_dir / "optimal_solution.csv"
-                if args.easy_instances == "True":
+                if args.easy_instances:
                     df_opt.to_csv(opt_path, index=False)
             else:
                 metadata_dir = Path(f"satellite_rl/output/comparison/SatelliteRL/{filename}")
@@ -206,9 +204,6 @@ def main() -> None:
                 if args.easy_instances == "True":
                     df_opt.to_csv(opt_path, index=False)
 
-            is_launched = launch_server()
-            if is_launched:
-                webbrowser.open("http://localhost:8050")
     else:
         is_launched = launch_server()
         if is_launched:
