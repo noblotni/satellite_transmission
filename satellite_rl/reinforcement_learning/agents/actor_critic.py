@@ -5,9 +5,8 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import torch
-from torch import nn
-from torch import optim
 from termcolor import colored
+from torch import nn, optim
 
 from satellite_rl import config
 from satellite_rl.reinforcement_learning.environment import SatelliteEnv, greedy_initialisation
@@ -257,7 +256,7 @@ class ACReporter:
                 "nb_group_min": self.nb_groups_min_time_step,
             }
         )
-        df_time_step.to_csv(self.report_dir / "time_step_report.csv", index=False)
+        df_time_step.to_csv(self.report_dir / "report.csv", index=False)
 
 
 class ACAgent:
@@ -482,6 +481,7 @@ def run_actor_critic(
     reporter = None
     if report:
         reporter = ACReporter(filename=filename, batch=batch, compare=compare)
+    print(reporter)
     agent = ACAgent(
         links=links,
         duration_episode=duration_episode,
@@ -493,4 +493,4 @@ def run_actor_critic(
     )
     state_min, nb_modems_min, nb_groups_min, results_dir = agent.run()
 
-    return state_min, nb_modems_min, nb_groups_min, results_dir
+    return state_min, nb_modems_min, nb_groups_min
