@@ -256,7 +256,7 @@ class ACReporter:
                 "nb_group_min": self.nb_groups_min_time_step,
             }
         )
-        df_time_step.to_csv(self.report_dir / "time_step_report.csv", index=False)
+        df_time_step.to_csv(self.report_dir / "report.csv", index=False)
 
 
 class ACAgent:
@@ -481,6 +481,7 @@ def run_actor_critic(
     reporter = None
     if report:
         reporter = ACReporter(filename=filename, batch=batch, compare=compare)
+    print(reporter)
     agent = ACAgent(
         links=links,
         duration_episode=duration_episode,
