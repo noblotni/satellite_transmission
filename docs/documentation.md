@@ -7,6 +7,7 @@
   - [Description des modules](#description-des-modules)
   - [Modélisation](#modélisation)
   - [Algorithmes utilisés](#algorithmes-utilisés)
+  - [Références](#références)
 
 ## Description des modules
 
@@ -26,4 +27,17 @@ Voir le document [modelisation.md](modelisation.md)
 
 Voir le document [algorithmes.md](algorithmes.md)
 
+## Références
 
+Voici les sources utilisées pour écrire cette documentation : 
+
+- [Understanding Actor-Critic Methods and A2C, Chris Yoon](https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f)
+  
+- [Actor-critic using deep-RL: continuous mountain car in TensorFlow, Andy Steinbach](https://medium.com/@asteinbach/actor-critic-using-deep-rl-continuous-mountain-car-in-tensorflow-4c1fb2110f7c)
+  
+- [Proximal Policy Optimization Explained, Wouter van Heeswijk, PhD
+Wouter van Heeswijk, PhD](https://towardsdatascience.com/proximal-policy-optimization-ppo-explained-abed1952457b)
+  
+- [Simple PPO implementation, Alvaro Durán Tovar](https://medium.com/deeplearningmadeeasy/simple-ppo-implementation-e398ca0f2e7c)
+ 
+- [Proximal Policy Optimization Algorithms, John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, Oleg Klimov](https://arxiv.org/abs/1707.06347)
