@@ -36,29 +36,33 @@ Mise sous forme d'un problème de programmation linéaire
 
 Caractéristiques d'une liaison :
 
--   $q_{S}$ : débit symbole
+-   Débit symbole $q_{S}$ : $0 < q_S \leq \text{16 384 kbauds}$ 
 
--   $q_{B}$ : débit binaire
+-  Débit binaire $q_{B}$ :  $\text{32 kbit/s} \leq q_B \leq \text{32 768 kbit/s}$
 
--   $q_{BI}$ : débit binaire inverse demandé
+-  Débit binaire inverse demandé $q_{BI}$ :$\text{32 kbit/s} \leq q_{BI} \leq \text{32 768 kbit/s}$
 
--   $Q_{BI}$ : débit binaire inverse maximal
+-  Débit binaire inverse maximal $Q_{BI}$ : $q_{BI} \leq Q_{BI} \leq \text{32 768 kbit/s}$ 
 
--   $b$ : bande passante
+-   Bande passante $b$ : $0 < b \leq \text{56 000 kHz}$
 
 Caractéristiques d'un modem :
 
 -   Nombre de liaisons maximal $N_m$ : 4
 
--   Débit binaire maximal $Q_{B}$
-
--   Débit symbole maximal $Q_{S}$
+- Débit binaire maximal mono-liaison $Q_{B1}$ : & 32 768 kbit/s
+  
+- Débit binaire maximal multi-liaisons $Q_{B2}$ :  16 384 kbit/s 
+  
+- Débit symbole maximal mono-liaison $Q_{S1}$ : 16 384 kbauds
+  
+- Débit symbole maximal multi-liaisons $Q_{S2}$ : 16 384 kbauds
 
 Caractéristiques d'un groupe :
 
 -   Nombre de liaisons maximal $N_g$ : 31
 
--   Bande passante maximale $B_G$
+-   Bande passante maximale $B_G$ : 56 000 kHz
 
 ### Variables de décision
 
@@ -85,11 +89,11 @@ Contraintes sur les modems :
 Contraintes sur les groupes :
 
 -   Chaque groupe ne doit pas contenir plus de $N_g$ liaisons :
-    $$\forall j \in \\{1,..., N\\}, \forall k \in \\{1,...,N\\}, \sum_{i=1}^N X_{ijk} \leq N_g$$
+    $$\forall j \in \\{1,..., N\\}, \forall k \in \\{1,...,N\\}, \sum_{k=1}^N\sum_{i=1}^N X_{ijk} \leq N_g$$
 
 -   La somme des bandes passantes des liaisons d'un même groupe ne doit
     pas dépasser la bande passante maximale $B_G$:
-    $$\forall j \in \\{1,...,N\\}, \forall k \in \\{1,...,N\\}, \sum_{i=1}^N b[i]X_{ijk} \leq B_G$$
+    $$\forall j \in \\{1,...,N\\}, \sum_{k=1}^N\sum_{i=1}^N b[i]X_{ijk} \leq B_G$$
 
 -   La somme des débits inverses doit être inférieure au minimum des
     débits inverses maximaux des liaisons présentes dans le groupe :
@@ -100,7 +104,9 @@ Contraintes sur les groupes :
 L'objectif est de minimiser le nombre de modems et de groupes utilisés.
 La fonction objectif à minimiser est:
 
-$$\sum_{i=1}^N \sum_{i=1}^N \sum_{j=1}^N X_{ijk}$$
+$$ \sum_{i=1}^N \sum_{k=1}^N \sum_{j=1}^N X_{ijk} + \sum_{k=1}^N \mathbb{1}_{\{\sum_{i=1}^N\sum_{j=1}^N X_{ijk} > 0\}}\left(\sum_{i=1}^N\sum_{j=1}^N X_{ijk}\right)$$
+
+Il s'agit de la somme du nombre de groupes et du nombre de modems utilisés.
 
 Adaptation de la modélisation à l'apprentissage par renforcement.
 -----------------------------------------------------------------

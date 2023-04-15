@@ -8,10 +8,14 @@ from gymnasium import Env, spaces
 # Define constants
 # Modems constants
 MOD_NB_LINKS: int = 4
-# Maximal binary rate of the modems (kbps)
-MOD_BIN_RATE: int = 16384
-# Maximal symbol rate of the modems (kbauds)
-MOD_SYMB_RATE: int = 16384
+# Maximal monomodal binary rate of the modems (kbps)
+MOD_MONO_BIN_RATE: int = 16384
+# Maximal multimodal binary rate of the modems (kbps)
+MOD_MULTI_BIN_RATE: int = 32768
+# Maximal monomodal symbol rate of the modems (kbauds)
+MOD_MONO_SYMB_RATE: int = 16384
+# Maximal multimodal symbol rate of the modems (kbauds)
+MOD_MULTI_SYMB_RATE: int = 16384
 # Groups constants
 # Maximal number of links within a group
 GRP_NB_LINKS: int = 31
@@ -158,10 +162,14 @@ class SatelliteEnv(Env):
             links_in_modem = [self.links[indice] for indice in indices]
             binary_rate = np.sum([link["binary_rate"] for link in links_in_modem])
             symbol_rate = np.sum([link["symbol_rate"] for link in links_in_modem])
-            if (
+            if len(indices) == 1 and (
+                binary_rate > MOD_MONO_BIN_RATE or symbol_rate > MOD_MONO_SYMB_RATE
+            ):
+                return False
+            elif (
                 len(indices) > MOD_NB_LINKS
-                or binary_rate > MOD_BIN_RATE
-                or symbol_rate > MOD_SYMB_RATE
+                or binary_rate > MOD_MULTI_BIN_RATE
+                or symbol_rate > MOD_MULTI_SYMB_RATE
             ):
                 return False
         return True
