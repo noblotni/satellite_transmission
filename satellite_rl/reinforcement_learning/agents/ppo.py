@@ -230,7 +230,7 @@ class PPO:
 def run_ppo(
     links: list,
     nb_episodes: int,
-    duration_episode: int,
+    nb_timesteps: int,
     print_freq: int,
     log_freq: int,
     timeout: int,
@@ -268,7 +268,7 @@ def run_ppo(
     ####### initialize environment hyperparameters ######
     env_name = "SatelliteRL"
 
-    max_ep_len = duration_episode  # max timesteps in one episode
+    max_ep_len = nb_timesteps  # max timesteps in one episode
     update_timestep = max_ep_len * 4  # update policy every n timesteps
 
     max_training_timesteps = nb_episodes  # break training loop if timeteps > max_training_timesteps

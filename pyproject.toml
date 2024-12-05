@@ -20,6 +20,7 @@ tqdm = "^4.65.0"
 plotly = "^5.13.1"
 torch = "^1.13.1"
 dash = "^2.8.1"
+requests = "^2.28.2"
 
 
 [tool.poetry.group.dev.dependencies]

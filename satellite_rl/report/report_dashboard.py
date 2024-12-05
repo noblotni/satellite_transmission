@@ -8,7 +8,7 @@ from dash import dash_table, dcc, html
 from dash.dependencies import Input, Output, State
 
 OUTPUT_PATH = Path.cwd() / "satellite_rl" / "output"
-ALL_ACTOR_CRITIC_RUN_PATHS = OUTPUT_PATH / "actor-critic_Results" / "SatelliteRL"
+ALL_ACTOR_CRITIC_RUN_PATHS = OUTPUT_PATH / "actor_critic_results" / "SatelliteRL"
 ALL_PPO_RUN_PATHS = OUTPUT_PATH / "PPO_Results" / "SatelliteRL"
 ALL_COMPARISON_RUN_PATHS = OUTPUT_PATH / "comparison" / "SatelliteRL"
 
@@ -42,6 +42,7 @@ app = dash.Dash(__name__)
 
 app.layout = html.Div(
     [
+        dcc.Interval(id="interval-component", interval=1 * 1000, n_intervals=0),  # in milliseconds
         html.Div(
             [
                 html.H2("Report dashboard"),
@@ -61,7 +62,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="run-selector",
                             options=options,
-                            value=options[0]["value"],
+                            value=options[-1]["value"],
                             searchable=False,
                             clearable=False,
                             className="run-dropdown",
@@ -75,7 +76,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="run-a-selector",
                             options=option_witout_comp,
-                            value=option_witout_comp[0]["value"],
+                            value=option_witout_comp[-1]["value"],
                             searchable=False,
                             clearable=False,
                             className="run-dropdown",
@@ -90,7 +91,7 @@ app.layout = html.Div(
                         dcc.Dropdown(
                             id="run-b-selector",
                             options=option_witout_comp,
-                            value=option_witout_comp[0]["value"],
+                            value=option_witout_comp[-1]["value"],
                             searchable=False,
                             clearable=False,
                             className="run-dropdown",
@@ -179,6 +180,15 @@ def toggle_run_selector(option):
         return {"display": "none"}, {"display": "block"}, {"display": "block"}
     else:
         return {"display": "block"}, {"display": "none"}, {"display": "none"}
+
+
+def load_best(path):
+    path = Path(path)
+    best_solution_file = path / "optimal_solution.csv"
+    best_solution = None
+    if best_solution_file.exists():
+        best_solution = pd.read_csv(best_solution_file, index_col=0)
+    return best_solution
 
 
 def load_metadata(path):
@@ -294,7 +304,7 @@ def get_compare_df(dfs_actor, dfs_ppo):
     return best_df_actor, best_df_ppo, worst_df_actor, worst_df_ppo
 
 
-def get_scatter_modem_group_reward(dfs, title, names=None):
+def get_scatter_modem_group_reward(dfs, title, best=None, names=None):
     """
     Create a scatter plot of the minimum number of modems and groups per episode and the reward per episode for each dataframe in dfs.
 
@@ -333,6 +343,25 @@ def get_scatter_modem_group_reward(dfs, title, names=None):
                 x=df.index, y=df["reward"], name="Reward_" + str(name), mode="lines", yaxis="y2"
             )
         )
+        if best is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=df.index,
+                    y=[best.iloc[0]["Number of modems"]] * df.index.size,
+                    name="best_nb_modem_min_" + str(name),
+                    mode="lines",
+                    yaxis="y1",
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=df.index,
+                    y=[best.iloc[0]["Number of groups"]] * df.index.size,
+                    name="best_nb_group_min_" + str(name),
+                    mode="lines",
+                    yaxis="y1",
+                )
+            )
     fig.update_layout(
         title={
             "text": title,
@@ -469,6 +498,7 @@ def update_graphs(run, run_a, run_b, option):
             fig3 = go.Figure()
     else:
         metadata = load_metadata(run).reset_index(drop=False)
+        best_solution = load_best(run)
         algo = metadata["Algorithm"].iloc[0]
         nb_runs = metadata["Number of runs"].iloc[0]
         style_box = {"display": "block"} if (nb_runs > 1) else {"display": "none"}
@@ -477,8 +507,8 @@ def update_graphs(run, run_a, run_b, option):
             dfs = load_data(run, algo)
             df_episodes = get_episode_df(dfs)
 
-            fig1 = get_scatter_modem_group_reward(df_episodes, "Episode")
-            fig2 = get_scatter_modem_group_reward(dfs, "Timestep")
+            fig1 = get_scatter_modem_group_reward(df_episodes, "Episode", best=best_solution)
+            fig2 = get_scatter_modem_group_reward(dfs, "Timestep", best=best_solution)
 
             dfs_add_min = [
                 df.apply(lambda x: x["nb_modem_min"] + x["nb_group_min"], axis=1).min()
@@ -512,10 +542,16 @@ def update_graphs(run, run_a, run_b, option):
             dfs_ep = [best_df_actor_ep, best_df_ppo_ep, worst_df_actor_ep, worst_df_ppo_ep]
 
             fig1 = get_scatter_modem_group_reward(
-                dfs_ep, "Episode", names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"]
+                dfs_ep,
+                "Episode",
+                names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"],
+                best=best_solution,
             )
             fig2 = get_scatter_modem_group_reward(
-                dfs, "Timestep", names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"]
+                dfs,
+                "Timestep",
+                names=["Best Actor", "Best PPO", "Worst Actor", "Worst PPO"],
+                best=best_solution,
             )
 
             dfs_best = pd.DataFrame(

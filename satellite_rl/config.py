@@ -2,7 +2,6 @@
 import os
 from pathlib import Path
 
-
 # Pytorch constants
 # Number of threads Pytorch
 # is allowed to use

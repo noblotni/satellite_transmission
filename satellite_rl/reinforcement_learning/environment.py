@@ -1,6 +1,6 @@
 """Satellite environment."""
-from typing import Optional
 import logging
+from typing import Optional
 
 import numpy as np
 from gymnasium import Env, spaces
